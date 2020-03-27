@@ -1,5 +1,5 @@
 # phasor
-(introLogo.png)
+![Image description](/introLogo.png)
 
 
 Easy, fast, configurable version of phasor. For BCDI reconstruction
