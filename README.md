@@ -1,4 +1,7 @@
 # phasor
+![GitHub Logo](/images/logo.png)
+Format: ![Alt Text](url)
+
 Easy, fast, configurable version of phasor. For BCDI reconstruction
 
 The code is based on my own developments and other groups:
