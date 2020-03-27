@@ -1,0 +1,15 @@
+# Initialisation file for PHASOR software. Should be placed in the analysis folder for your experiment
+# If this file is not found by the program, default values will be used
+# comments are introduced by # in the beginning of the line
+# No spaces
+#######################################################################################################
+> Binning of the data, [integer numbers]
+1
+> Photon energy, [eV]
+8840
+> Sample to detector distance, [m]
+1.86
+> Detector pixel size, [um]
+75e-6
+> Angular step size in the rocking curve, [degrees]
+0.0025
