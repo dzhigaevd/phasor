@@ -1,6 +1,6 @@
 # phasor
-![GitHub Logo](/images/logo.png)
-Format: ![Alt Text](url)
+(introLogo.png)
+
 
 Easy, fast, configurable version of phasor. For BCDI reconstruction
 
