@@ -1,0 +1,124 @@
+commit 429498357d66eeb8f237375ec5ed636f03626c2e
+Merge: c51caa3 d5385a3
+Author: Dmitry Dzhigaev <ddzhigaev@gmail.com>
+Date:   Sat Mar 28 15:11:07 2020 +0100
+
+    Merge pull request #1 from DzhigaevD/phasor_update
+    
+    Add new strain evaluation methods
+
+commit d5385a3b253b6e265b1b425ceeca1531461349df
+Author: DzhigaevD <ddzhigaev@gmail.com>
+Date:   Sat Mar 28 14:33:26 2020 +0100
+
+    Add iso3d_strain method for strain isosurfaces; Add calculate_strain_histogram method
+
+commit c51caa36ef7d1e391231a869309d50f74605d4e4
+Author: Dmitry Dzhigaev <ddzhigaev@gmail.com>
+Date:   Fri Mar 27 11:41:55 2020 +0100
+
+    Big commmit of the source files
+
+commit ac6638f4d11ffff1d0ec3cdb440ce82bedc451a0
+Author: Dmitry Dzhigaev <ddzhigaev@gmail.com>
+Date:   Fri Mar 27 11:35:30 2020 +0100
+
+    Add files via upload
+
+commit b7252f5549038d25ef5e4188191f0a2622b09caf
+Author: Dmitry Dzhigaev <ddzhigaev@gmail.com>
+Date:   Fri Mar 27 11:35:02 2020 +0100
+
+    Delete introLogo.png
+
+commit f6a48777b1da9fa4238832a10098815b499c80e7
+Author: Dmitry Dzhigaev <ddzhigaev@gmail.com>
+Date:   Fri Mar 27 11:34:38 2020 +0100
+
+    Update README.md
+
+commit 441069ef9bfd2503c7d509141f9e5ce84e259f56
+Author: Dmitry Dzhigaev <ddzhigaev@gmail.com>
+Date:   Fri Mar 27 11:34:20 2020 +0100
+
+    Add files via upload
+
+commit 9c75e1d55578743f0c26500e9a702ece5b5cb24e
+Author: Dmitry Dzhigaev <ddzhigaev@gmail.com>
+Date:   Fri Mar 27 11:34:01 2020 +0100
+
+    Delete introLogo.png
+
+commit 8cfdb0d630aa3ef818ca2420905145aa9df37b07
+Author: Dmitry Dzhigaev <ddzhigaev@gmail.com>
+Date:   Fri Mar 27 11:33:28 2020 +0100
+
+    Update README.md
+
+commit c08e2124a34813f3d18c7af0865a510804137951
+Author: Dmitry Dzhigaev <ddzhigaev@gmail.com>
+Date:   Fri Mar 27 11:33:16 2020 +0100
+
+    Update README.md
+
+commit 0f261330a184c123e436b97d985b5de67c6e6511
+Author: Dmitry Dzhigaev <ddzhigaev@gmail.com>
+Date:   Fri Mar 27 11:32:57 2020 +0100
+
+    Add files via upload
+
+commit 2aa893d3a8a1c64a2e3f3f5a8c0adfdba072f08b
+Author: Dmitry Dzhigaev <ddzhigaev@gmail.com>
+Date:   Fri Mar 27 11:30:49 2020 +0100
+
+    Update README.md
+
+commit a196252c83b886fa0e9d1042ed527f8ea003714d
+Author: Dmitry Dzhigaev <ddzhigaev@gmail.com>
+Date:   Fri Mar 27 11:30:16 2020 +0100
+
+    Update README.md
+
+commit ac08024b0b90ca02e600a2b45bd7a1a25cfcff4c
+Author: Dmitry Dzhigaev <ddzhigaev@gmail.com>
+Date:   Fri Mar 27 11:29:45 2020 +0100
+
+    logo upload
+
+commit 1b2ba7087af0c6a7c2517ffbb1d6fd17484ff8eb
+Author: Dmitry Dzhigaev <ddzhigaev@gmail.com>
+Date:   Fri Mar 27 11:29:09 2020 +0100
+
+    Update README.md
+
+commit 586abac196aee6cf83d5b02bce3f4f3b465d7a96
+Author: Dmitry Dzhigaev <ddzhigaev@gmail.com>
+Date:   Fri Mar 27 11:27:12 2020 +0100
+
+    Update readme
+
+commit ea732a95f977a1ba75d3aa6d5b6fb388bf038efe
+Author: Dmitry Dzhigaev <ddzhigaev@gmail.com>
+Date:   Mon Feb 10 11:53:29 2020 +0100
+
+    Update readme
+
+commit c96e799c50b6c77e39b58c3959261bc55b445316
+Author: Dmitry Dzhigaev <ddzhigaev@gmail.com>
+Date:   Mon Feb 3 19:48:12 2020 +0100
+
+    Update README.md
+
+commit 69810858b171a7bbafc11162e01bcd5c7bfd8447
+Author: Dmitry Dzhigaev <ddzhigaev@gmail.com>
+Date:   Mon Feb 3 19:47:05 2020 +0100
+
+    Defenition of the PHASOR class
+    
+    The class file contains major part of functionality and properties related to every single BCDI reconstruction
+
+commit b85c9270a5180e249a4094605b036c49b0fee039
+Author: Dmitry Dzhigaev <ddzhigaev@gmail.com>
+Date:   Mon Feb 3 19:45:35 2020 +0100
+
+    Initial commit
