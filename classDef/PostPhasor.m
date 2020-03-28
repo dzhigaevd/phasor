@@ -16,9 +16,11 @@ classdef PostPhasor < handle
         object;
         displacement;
         strain;
-        plotting;
-        mask;
+        strain_histogram;
+        strain_histogram_vector;
         strain_mask;
+        plotting;
+        mask;           
         prtf;
         
         % Constants. They are needed for correct labeling of axes
@@ -311,6 +313,42 @@ classdef PostPhasor < handle
             postPhasor.update_plotting_vectors;
         end
         
+        function calculate_strain_histogram(postPhasor)
+            figure;
+            hH = histogram(postPhasor.strain(:),'Normalization','probability'); %             
+            set(gca,'FontSize',24);
+            yline(max(hH.Values(:))/2); 
+            yline(max(hH.Values(:))/4);             
+            xlabel('Strain');
+            ylabel('Probability');
+            
+            postPhasor.strain_histogram = hH.Values;
+            postPhasor.strain_histogram_vector = hH.BinEdges(1:end-1);
+            
+            lorentzian_fit(hH);
+            
+            function [fitresult, gof] = lorentzian_fit(hH)                 
+                [xData, yData] = prepareCurveData( [], hH.Values );
+
+                % Set up fittype and options.
+                ft = fittype( '1/(3.14*a*(1+((x-b)/a).^2))');
+                opts = fitoptions( 'Method', 'NonlinearLeastSquares' );
+                opts.Display = 'Off';
+                opts.StartPoint = [0.253634655350243 0.911927014033797];
+
+                % Fit model to data.
+                [fitresult, gof] = fit( xData, yData, ft)
+
+                % Plot fit with data.
+                figure( 'Name', 'untitled fit 1' );
+                h = plot( fitresult, xData, yData );
+                legend( h, 'Histogram', 'Lorentzian fit', 'Location', 'NorthEast', 'Interpreter', 'none' );
+                % Label axes
+                ylabel( 'Probability', 'Interpreter', 'none' );
+                grid on
+            end                
+        end
+        
         function calculate_prtf(postPhasor)
             % [IN DEVELOPMENT]
             if exist('np') ~= 1
@@ -414,7 +452,7 @@ classdef PostPhasor < handle
             postPhasor.prtf.values = prtf;
             postPhasor.prtf.q_spacing = 2*pi*postPhasor.experiment.detector_pitch./postPhasor.experiment.wavelength./postPhasor.experiment.sample_detector_d;
         end
-        
+               
         function calculate_resolution(postPhasor)
             % [IN DEVELOPMENT]
         end
@@ -432,7 +470,55 @@ classdef PostPhasor < handle
         function slice3d_object(postPhasor)
             vis3d(double(angle(postPhasor.object)), abs(postPhasor.object)>0.1);
         end
+        
+        function iso3d_strain(postPhasor)
+            % Use an input parameter to show other complex valued matrix
+            input = postPhasor.strain.*postPhasor.strain_mask;      
+            
+            handle = figure;     
+            
+            panel = uipanel('Parent',handle,'Title','Strain distribution','FontSize',...
+            12,'Units','Normalized','Position',[.1 0.1 .77 .85]);         
+            ax = axes('Parent',panel);             
+            uicontrol('Parent',handle,'Style',...
+            'slider','Min',min(postPhasor.strain(:)),'Max',max(postPhasor.strain(:)),...
+            'Value',0,'Units','Normalized',...
+            'Position', [0.1 0.05 0.3 0.03],...
+            'Callback', @slideIsosurfaceReal); 
+            isoVal = min(postPhasor.strain(:));          
+            
+            drawIsosurface(input,isoVal);            
+            
+            function drawIsosurface(input,isoVal)
+                cla(ax);
+                axes(ax);
                 
+                % Shape isosurface  
+                isosurface(postPhasor.strain_mask);alpha(0.1)
+                xlabel('x, [nm]'); ylabel('y, [nm]'); zlabel('z, [nm]'); 
+                hold on;            
+                
+                % Strain isosurface
+                isosurface(input,isoVal);
+                xlabel('x, [nm]'); ylabel('y, [nm]'); zlabel('z, [nm]'); 
+                rotate3d on;
+                grid on;
+                axis tight;
+                axis equal; 
+                axis vis3d;
+                axis image;
+                h3 = light; h3.Position = [-1 -1 -1];  
+                h4 = light; h4.Position= [1 1 1];           
+                colormap jet;
+                title(sprintf('Strain value: %.4f',isoVal))
+            end
+            
+            function slideIsosurfaceReal(hObj,callbackdata)
+                isoVal = get(hObj,'Value');                 
+                drawIsosurface(input,isoVal);
+            end  
+        end
+        
         function iso3d_object(postPhasor,input,cmap)
             % Use an input parameter to show other complex valued matrix
             if nargin == 1
