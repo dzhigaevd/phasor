@@ -329,7 +329,7 @@ classdef PostPhasor < handle
         
         function calculate_strain_histogram(postPhasor)
             figure;
-            hH = histogram(postPhasor.strain(:),'Normalization','probability'); %             
+            hH = histogram(postPhasor.strain.*postPhasor.strain_mask,1000); %             
             set(gca,'FontSize',24);
             yline(max(hH.Values(:))/2); 
             yline(max(hH.Values(:))/4);             
@@ -337,30 +337,11 @@ classdef PostPhasor < handle
             ylabel('Probability');
             
             postPhasor.strain_histogram = hH.Values;
-            postPhasor.strain_histogram_vector = hH.BinEdges(1:end-1);
+            postPhasor.strain_histogram_vector = hH.BinEdges(1:end-1);  
             
-            lorentzian_fit(hH);
-            
-            function [fitresult, gof] = lorentzian_fit(hH)                 
-                [xData, yData] = prepareCurveData( [], hH.Values );
-
-                % Set up fittype and options.
-                ft = fittype( '1/(3.14*a*(1+((x-b)/a).^2))');
-                opts = fitoptions( 'Method', 'NonlinearLeastSquares' );
-                opts.Display = 'Off';
-                opts.StartPoint = [0.253634655350243 0.911927014033797];
-
-                % Fit model to data.
-                [fitresult, gof] = fit( xData, yData, ft)
-
-                % Plot fit with data.
-                figure( 'Name', 'untitled fit 1' );
-                h = plot( fitresult, xData, yData );
-                legend( h, 'Histogram', 'Lorentzian fit', 'Location', 'NorthEast', 'Interpreter', 'none' );
-                % Label axes
-                ylabel( 'Probability', 'Interpreter', 'none' );
-                grid on
-            end                
+            figure; 
+            plot(hH.BinEdges(1:end-1),log10(hH.Values));
+            title('log-plot of probability');
         end
         
         function calculate_prtf(postPhasor)
