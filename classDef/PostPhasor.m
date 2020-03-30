@@ -130,8 +130,22 @@ classdef PostPhasor < handle
         
         % Post-processing %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         function flip(postPhasor,dimension)
-            postPhasor.object = flip(postPhasor.object,dimension);
-            fprintf('Object is flipped along dimension %d\n',dimension);
+            try
+                postPhasor.object = flip(postPhasor.object,dimension);
+                postPhasor.mask = flip(postPhasor.mask,dimension);
+                fprintf('Object is flipped along dimension %d\n',dimension);
+            catch
+                error('Object can not be flipped along selected dimension');
+            end
+            
+            try
+                postPhasor.strain = flip(postPhasor.strain,dimension);
+                postPhasor.strain_mask = flip(postPhasor.strain_mask,dimension);
+                fprintf('Strain is flipped along dimension %d\n',dimension);
+            catch
+                error('Strain can not be flipped along selected dimension');
+            end
+                
         end
         
         function crop_manual(postPhasor)  
@@ -479,14 +493,17 @@ classdef PostPhasor < handle
             
             panel = uipanel('Parent',handle,'Title','Strain distribution','FontSize',...
             12,'Units','Normalized','Position',[.1 0.1 .77 .85]);         
-            ax = axes('Parent',panel);             
+            ax = axes('Parent',panel); 
+            
             uicontrol('Parent',handle,'Style',...
             'slider','Min',min(postPhasor.strain(:)),'Max',max(postPhasor.strain(:)),...
             'Value',0,'Units','Normalized',...
             'Position', [0.1 0.05 0.3 0.03],...
             'Callback', @slideIsosurfaceReal); 
+                    
             isoVal = min(postPhasor.strain(:));          
-            
+            hText = uicontrol('Parent',handle,'Style','text','String',sprintf('Strain value: %.4f',isoVal),'Units','Normalized',...
+            'Position', [0.4 0.05 0.3 0.03]);
             drawIsosurface(input,isoVal);            
             
             function drawIsosurface(input,isoVal)
@@ -494,7 +511,7 @@ classdef PostPhasor < handle
                 axes(ax);
                 
                 % Shape isosurface  
-                isosurface(postPhasor.strain_mask);alpha(0.1)
+                isosurface(postPhasor.strain_mask);alpha(0.2)
                 xlabel('x, [nm]'); ylabel('y, [nm]'); zlabel('z, [nm]'); 
                 hold on;            
                 
@@ -509,8 +526,8 @@ classdef PostPhasor < handle
                 axis image;
                 h3 = light; h3.Position = [-1 -1 -1];  
                 h4 = light; h4.Position= [1 1 1];           
-                colormap jet;
-                title(sprintf('Strain value: %.4f',isoVal))
+                colormap jet;    
+                set(hText,'String',sprintf('Strain value: %.4f',isoVal));
             end
             
             function slideIsosurfaceReal(hObj,callbackdata)
