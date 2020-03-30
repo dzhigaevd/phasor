@@ -496,12 +496,12 @@ classdef PostPhasor < handle
             ax = axes('Parent',panel); 
             
             uicontrol('Parent',handle,'Style',...
-            'slider','Min',min(postPhasor.strain(:)),'Max',max(postPhasor.strain(:)),...
+            'slider','Min',min(input(:)),'Max',max(input(:)),...
             'Value',0,'Units','Normalized',...
             'Position', [0.1 0.05 0.3 0.03],...
             'Callback', @slideIsosurfaceReal); 
                     
-            isoVal = min(postPhasor.strain(:));          
+            isoVal = min(input(:));          
             hText = uicontrol('Parent',handle,'Style','text','String',sprintf('Strain value: %.4f',isoVal),'Units','Normalized',...
             'Position', [0.4 0.05 0.3 0.03]);
             drawIsosurface(input,isoVal);            
@@ -516,9 +516,7 @@ classdef PostPhasor < handle
                 hold on;            
                 
                 % Strain isosurface
-                isosurface(input,isoVal);hold on
-                isosurface(input,isoVal+0.001);hold on
-                isosurface(input,isoVal-0.001);hold on
+                isosurface(input,isoVal);hold on                
                 xlabel('x, [nm]'); ylabel('y, [nm]'); zlabel('z, [nm]'); 
                 rotate3d on;
                 grid on;
