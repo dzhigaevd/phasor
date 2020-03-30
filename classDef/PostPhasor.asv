@@ -132,16 +132,18 @@ classdef PostPhasor < handle
         function flip(postPhasor,dimension)
             try
                 postPhasor.object = flip(postPhasor.object,dimension);
+                postPhasor.mask = flip(postPhasor.mask,dimension);
                 fprintf('Object is flipped along dimension %d\n',dimension);
             catch
                 error('Object can not be flipped along selected dimension');
             end
             
             try
-                postPhasor.object = flip(postPhasor.object,dimension);
-                fprintf('Object is flipped along dimension %d\n',dimension);
+                postPhasor.strain = flip(postPhasor.strain,dimension);
+                postPhasor.strain_mask = flip(postPhasor.strain_mask,dimension);
+                fprintf('Strain is flipped along dimension %d\n',dimension);
             catch
-                error('Object can not be flipped along selected dimension');
+                error('Strain can not be flipped along selected dimension');
             end
                 
         end
@@ -327,7 +329,7 @@ classdef PostPhasor < handle
         
         function calculate_strain_histogram(postPhasor)
             figure;
-            hH = histogram(postPhasor.strain(:),'Normalization','probability'); %             
+            hH = histogram(postPhasor.strain.*postPhasor.strain_mask,1000,'Normalization','probability'); %             
             set(gca,'FontSize',24);
             yline(max(hH.Values(:))/2); 
             yline(max(hH.Values(:))/4);             
@@ -335,30 +337,15 @@ classdef PostPhasor < handle
             ylabel('Probability');
             
             postPhasor.strain_histogram = hH.Values;
-            postPhasor.strain_histogram_vector = hH.BinEdges(1:end-1);
+            postPhasor.strain_histogram_vector = hH.BinEdges(1:end-1);  
             
-            lorentzian_fit(hH);
+            main_val = max(hH.Values);
+            [val, pos] = find(hH.Values==main_val);
+            fprintf('%.2f of strain values are in the range: [%.2:%.2]', max(hH.Values), hH.BinEdges(pos),)
             
-            function [fitresult, gof] = lorentzian_fit(hH)                 
-                [xData, yData] = prepareCurveData( [], hH.Values );
-
-                % Set up fittype and options.
-                ft = fittype( '1/(3.14*a*(1+((x-b)/a).^2))');
-                opts = fitoptions( 'Method', 'NonlinearLeastSquares' );
-                opts.Display = 'Off';
-                opts.StartPoint = [0.253634655350243 0.911927014033797];
-
-                % Fit model to data.
-                [fitresult, gof] = fit( xData, yData, ft)
-
-                % Plot fit with data.
-                figure( 'Name', 'untitled fit 1' );
-                h = plot( fitresult, xData, yData );
-                legend( h, 'Histogram', 'Lorentzian fit', 'Location', 'NorthEast', 'Interpreter', 'none' );
-                % Label axes
-                ylabel( 'Probability', 'Interpreter', 'none' );
-                grid on
-            end                
+            figure; 
+            plot(hH.BinEdges(1:end-1),log10(hH.Values));
+            title('log-plot of probability');
         end
         
         function calculate_prtf(postPhasor)
@@ -494,12 +481,12 @@ classdef PostPhasor < handle
             ax = axes('Parent',panel); 
             
             uicontrol('Parent',handle,'Style',...
-            'slider','Min',min(postPhasor.strain(:)),'Max',max(postPhasor.strain(:)),...
+            'slider','Min',min(input(:)),'Max',max(input(:)),...
             'Value',0,'Units','Normalized',...
             'Position', [0.1 0.05 0.3 0.03],...
             'Callback', @slideIsosurfaceReal); 
                     
-            isoVal = min(postPhasor.strain(:));          
+            isoVal = min(input(:));          
             hText = uicontrol('Parent',handle,'Style','text','String',sprintf('Strain value: %.4f',isoVal),'Units','Normalized',...
             'Position', [0.4 0.05 0.3 0.03]);
             drawIsosurface(input,isoVal);            
@@ -509,12 +496,12 @@ classdef PostPhasor < handle
                 axes(ax);
                 
                 % Shape isosurface  
-                isosurface(postPhasor.strain_mask);alpha(0.1)
+                isosurface(postPhasor.strain_mask);alpha(0.2)
                 xlabel('x, [nm]'); ylabel('y, [nm]'); zlabel('z, [nm]'); 
                 hold on;            
                 
                 % Strain isosurface
-                isosurface(input,isoVal);
+                isosurface(input,isoVal);hold on                
                 xlabel('x, [nm]'); ylabel('y, [nm]'); zlabel('z, [nm]'); 
                 rotate3d on;
                 grid on;

@@ -329,15 +329,19 @@ classdef PostPhasor < handle
         
         function calculate_strain_histogram(postPhasor)
             figure;
-            hH = histogram(postPhasor.strain.*postPhasor.strain_mask,1000); %             
+            hH = histogram(postPhasor.strain.*postPhasor.strain_mask,1000,'Normalization','probability'); %             
             set(gca,'FontSize',24);
             yline(max(hH.Values(:))/2); 
             yline(max(hH.Values(:))/4);             
             xlabel('Strain');
-            ylabel('Probability');
+            ylabel('Probability');         
             
+            max_val = max(hH.Values);
+            [val, pos] = find(hH.Values==max_val);
+            fprintf('%.2f%% of strain values are in the range: [%.2e : %.2e]%%\n', max(hH.Values)*100, hH.BinEdges(pos)*100, hH.BinEdges(pos+1)*100);
+                        
             postPhasor.strain_histogram = hH.Values;
-            postPhasor.strain_histogram_vector = hH.BinEdges(1:end-1);  
+            postPhasor.strain_histogram_vector = hH.BinEdges(1:end-1);                        
             
             figure; 
             plot(hH.BinEdges(1:end-1),log10(hH.Values));
