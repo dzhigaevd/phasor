@@ -516,7 +516,9 @@ classdef PostPhasor < handle
                 hold on;            
                 
                 % Strain isosurface
-                isosurface(input,isoVal);
+                isosurface(input,isoVal);hold on
+                isosurface(input,isoVal+0.001);hold on
+                isosurface(input,isoVal-0.001);hold on
                 xlabel('x, [nm]'); ylabel('y, [nm]'); zlabel('z, [nm]'); 
                 rotate3d on;
                 grid on;
