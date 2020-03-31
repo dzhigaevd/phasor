@@ -329,9 +329,28 @@ classdef PostPhasor < handle
             postPhasor.update_plotting_vectors;
         end
         
-        function calculate_strain_histogram(postPhasor)
+        function calculate_strain_histogram(postPhasor, domain)
+            if ~exist('domain')
+                domain = 'full';                
+            end
+            % Use an input parameter to show other complex valued matrix
+            switch domain
+                case 'full'
+                    strain_mask = postPhasor.strain_mask;      
+                    disp('Displaying full strain isosurface');
+                case 'bulk'
+                    strain_mask = postPhasor.strain_mask_bulk;  
+                    disp('Displaying bulk strain isosurface');
+                case 'shell'
+                    strain_mask = postPhasor.strain_mask_shell;  
+                    disp('Displaying shell strain isosurface');
+            end
+            
+            input = postPhasor.strain.*strain_mask;
+            % Test feature: exclude all 0 values of strain
+            input(input==0) = Nan;
             figure;
-            hH = histogram(postPhasor.strain.*postPhasor.strain_mask.whole,1000,'Normalization','probability'); %             
+            hH = histogram(input,1000,'Normalization','probability'); %             
             set(gca,'FontSize',24);
             yline(max(hH.Values(:))/2); 
             yline(max(hH.Values(:))/4);             
@@ -339,7 +358,7 @@ classdef PostPhasor < handle
             ylabel('Probability');         
             
             max_val = max(hH.Values);
-            [val, pos] = find(hH.Values==max_val);
+            [val, pos] = find(hH.Values == max_val);
             fprintf('%.2f%% of strain values are in the range: [%.2e : %.2e]%%\n', max(hH.Values)*100, hH.BinEdges(pos)*100, hH.BinEdges(pos+1)*100);
                         
             postPhasor.strain_histogram = hH.Values;
@@ -350,9 +369,14 @@ classdef PostPhasor < handle
             title('log-plot of probability');
         end
         
-        function segment_strain_mask(postPhasor)
-            sigma = 3;
-            threshold = 0.7;
+        function segment_strain_mask(postPhasor,sigma,threshold)
+            if nargin == 1
+                sigma = 6;
+                threshold = 0.75;
+            elseif nargin == 2
+                threshold = 0.75;
+            end
+            
             if isempty(postPhasor.object)
                 error('No object defined! Create object first!')
             else
@@ -366,11 +390,14 @@ classdef PostPhasor < handle
                 postPhasor.strain_mask_shell = postPhasor.strain_mask-postPhasor.strain_mask_bulk; 
                           
                 % Estimate shell thickness
+                a = zeros(100,1);
                 a(25:75) = 1;
-                b = imgaussfilt(a,3);
-                
+                b = imgaussfilt(a,sigma);
+                c = b>threshold;                
+                s = sum(a-c)/2;
+                th = s*postPhasor.object_sampling;
                 fprintf('Mask is shrinked by sigma %.3f at threshold %.3f\n',sigma, threshold);
-                fprintf('Shell thickness: %.2f nm\n',)
+                fprintf('Shell thickness: %.2f nm\n',th*1e9);
             end
         end
         
@@ -499,7 +526,6 @@ classdef PostPhasor < handle
         function iso3d_strain(postPhasor,domain)
             if ~exist('domain')
                 domain = 'full';
-                disp('Displaying full strain isosurface');
             end
             % Use an input parameter to show other complex valued matrix
             switch domain

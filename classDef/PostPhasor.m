@@ -329,19 +329,39 @@ classdef PostPhasor < handle
             postPhasor.update_plotting_vectors;
         end
         
-        function calculate_strain_histogram(postPhasor)
+        function calculate_strain_histogram(postPhasor, domain)
+            if ~exist('domain')
+                domain = 'full';                
+            end
+            % Use an input parameter to show other complex valued matrix
+            switch domain
+                case 'full'
+                    strain_mask = postPhasor.strain_mask;      
+                    disp('Histogram of strain in the full object volume');
+                case 'bulk'
+                    strain_mask = postPhasor.strain_mask_bulk;  
+                    disp('Histogram of strain in the bulk object volume');
+                case 'shell'
+                    strain_mask = postPhasor.strain_mask_shell;  
+                    disp('Histogram of strain in the shell object volume');
+            end
+            
+            input = postPhasor.strain.*strain_mask;
+            % Test feature: exclude all 0 values of strain
+            
             figure;
-            hH = histogram(postPhasor.strain.*postPhasor.strain_mask.whole,1000,'Normalization','probability'); %             
+            [hV,edges] = histcounts(input,200,'Normalization','probability'); % 
+            max_val = max(hV);
+            [val, pos] = find(hV == max_val);
+            fprintf('%.2f%% of strain values are in the range: [%.2e : %.2e]%%\n', max(hV)*100, edges(pos)*100, edges(pos+1)*100);                      
+            
+            hH = histogram(input(input~=0),100,'Normalization','probability'); %  
             set(gca,'FontSize',24);
             yline(max(hH.Values(:))/2); 
             yline(max(hH.Values(:))/4);             
             xlabel('Strain');
             ylabel('Probability');         
-            
-            max_val = max(hH.Values);
-            [val, pos] = find(hH.Values==max_val);
-            fprintf('%.2f%% of strain values are in the range: [%.2e : %.2e]%%\n', max(hH.Values)*100, hH.BinEdges(pos)*100, hH.BinEdges(pos+1)*100);
-                        
+                
             postPhasor.strain_histogram = hH.Values;
             postPhasor.strain_histogram_vector = hH.BinEdges(1:end-1);                        
             
@@ -507,7 +527,6 @@ classdef PostPhasor < handle
         function iso3d_strain(postPhasor,domain)
             if ~exist('domain')
                 domain = 'full';
-                disp('Displaying full strain isosurface');
             end
             % Use an input parameter to show other complex valued matrix
             switch domain
