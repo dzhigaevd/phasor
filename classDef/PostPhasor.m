@@ -142,7 +142,7 @@ classdef PostPhasor < handle
             
             try
                 postPhasor.strain = flip(postPhasor.strain,dimension);
-                postPhasor.strain_mask.whole = flip(postPhasor.strain_mask.whole,dimension);
+                postPhasor.strain_mask = flip(postPhasor.strain_mask,dimension);
                 fprintf('Strain is flipped along dimension %d\n',dimension);
             catch
                 error('Strain can not be flipped along selected dimension');
@@ -253,11 +253,11 @@ classdef PostPhasor < handle
             mask_shift(abs(strain_axis)) = 1;
 
             if abs(strain_axis) == 1
-                postPhasor.strain_mask.whole = postPhasor.mask(1:end-1,:,:);
+                postPhasor.strain_mask = postPhasor.mask(1:end-1,:,:);
             end
 
-            postPhasor.strain_mask.whole = postPhasor.strain_mask.whole+circshift(postPhasor.strain_mask.whole,mask_shift);
-            postPhasor.strain_mask.whole = postPhasor.strain_mask.whole == 2;
+            postPhasor.strain_mask = postPhasor.strain_mask+circshift(postPhasor.strain_mask,mask_shift);
+            postPhasor.strain_mask = postPhasor.strain_mask == 2;
             
             postPhasor.update_plotting_vectors;
         end
@@ -320,11 +320,11 @@ classdef PostPhasor < handle
             mask_shift(abs(strain_axis)) = 1;
 
             if abs(strain_axis) == 1
-                postPhasor.strain_mask.whole = postPhasor.mask(1:end-1,:,:);
+                postPhasor.strain_mask = postPhasor.mask(1:end-1,:,:);
             end
 
-            postPhasor.strain_mask.whole = postPhasor.strain_mask.whole+circshift(postPhasor.strain_mask.whole,mask_shift);
-            postPhasor.strain_mask.whole = postPhasor.strain_mask.whole == 2;
+            postPhasor.strain_mask = postPhasor.strain_mask+circshift(postPhasor.strain_mask,mask_shift);
+            postPhasor.strain_mask = postPhasor.strain_mask == 2;
             
             postPhasor.update_plotting_vectors;
         end
@@ -336,51 +336,80 @@ classdef PostPhasor < handle
             % Use an input parameter to show other complex valued matrix
             switch domain
                 case 'full'
-                    strain_mask = postPhasor.strain_mask;      
+                    strain_mask = postPhasor.strain_mask;
+                    title_s = 'Full object';
                     disp('Histogram of strain in the full object volume');
                 case 'bulk'
                     if isempty(postPhasor.strain_mask_bulk)
                         error('No segmentation done! Use .segment_strain_mask')
                     else
-                        strain_mask = postPhasor.strain_mask_bulk;  
+                        strain_mask = postPhasor.strain_mask_bulk;
+                        title_s = 'Bulk';
                         disp('Histogram of strain in the bulk object volume');                    
                     end
                 case 'shell'
                     if isempty(postPhasor.strain_mask_shell)
                         error('No segmentation done! Use .segment_strain_mask')
                     else
-                        strain_mask = postPhasor.strain_mask_shell;  
+                        strain_mask = postPhasor.strain_mask_shell;
+                        title_s = 'Shell';
                         disp('Histogram of strain in the shell object volume');
+                    end
+                case 'both'
+                    if isempty(postPhasor.strain_mask_bulk)
+                        error('No segmentation done! Use .segment_strain_mask')
+                    else
+                        strain_mask(:,:,:,1) = postPhasor.strain_mask_bulk;
+                        strain_mask(:,:,:,2) = postPhasor.strain_mask_shell;                        
+                        title_s = 'Bulk and shell';
+                        legend_s{1} = 'Bulk';
+                        legend_s{2} = 'Shell';
+                        disp('Histogram of strain in the bulk and shell of the object volume');                    
                     end
             end
             
-            input = postPhasor.strain.*strain_mask;
-            % Test feature: exclude all 0 values of strain
-            
+            for ii = 1:size(strain_mask,4)
+                input(:,:,:,ii) = postPhasor.strain.*strain_mask(:,:,:,ii);
+            end            
+                        
             figure;
-            [hV,edges] = histcounts(input,200,'Normalization','probability'); % 
-            max_val = max(hV);
-            [val, pos] = find(hV == max_val);
-            fprintf('%.2f%% of strain values are in the range: [%.2e : %.2e]%%\n', max(hV)*100, edges(pos)*100, edges(pos+1)*100);                      
+            for ii = 1:size(strain_mask,4)
+                temp = input(:,:,:,ii);
+                
+                [hV,edges] = histcounts(temp,200,'Normalization','probability'); % 
+                max_val = max(hV);
+                [val, pos] = find(hV == max_val);
+                fprintf('%.2f%% of strain values are in the range: [%.2e : %.2e]%%\n', max(hV)*100, edges(pos)*100, edges(pos+1)*100);                      
+                                
+                hH = histogram(temp(temp~=0),1000,'Normalization','probability','EdgeColor','none');  hold on;                
+            end
             
-            hH = histogram(input(input~=0),100,'Normalization','probability'); %  
-            set(gca,'FontSize',24);
-            yline(max(hH.Values(:))/2); 
-            yline(max(hH.Values(:))/4);             
+            set(gca,'FontSize',24); 
+            xline(0,'--');
+            yline(max(hH.Values(:))/2,'r'); 
+            yline(max(hH.Values(:))/4,'g');             
             xlabel('Strain');
             ylabel('Probability');         
-                
-            postPhasor.strain_histogram = hH.Values;
-            postPhasor.strain_histogram_vector = hH.BinEdges(1:end-1);                        
+            title(title_s);
             
-            figure; 
-            plot(hH.BinEdges(1:end-1),log10(hH.Values));
-            title('log-plot of probability');
+            if ii == 2
+                legend(legend_s{1},legend_s{2},'Zero strain','FWHM','2FWHM')
+            else
+                legend(title_s,'Zero strain','FWHM','2FWHM')
+            end
+            
+%             postPhasor.strain_histogram = hH.Values;
+%             postPhasor.strain_histogram_vector = hH.BinEdges(1:end-1);                        
+            
+            
+%             figure; 
+%             plot(hH.BinEdges(1:end-1),log10(hH.Values));
+%             title('log-plot of probability');
         end
         
         function segment_strain_mask(postPhasor,sigma,threshold)
             if nargin == 1
-                sigma = 6;
+                sigma = 3;
                 threshold = 0.75;
             elseif nargin == 2
                 threshold = 0.75;
@@ -588,7 +617,7 @@ classdef PostPhasor < handle
                 h3 = light; h3.Position = [-1 -1 -1];  
                 h4 = light; h4.Position= [1 1 1];           
                 colormap jet;    
-                set(hText,'String',sprintf('Strain value: %.4f',isoVal));
+                set(hText,'String',sprintf('Strain value: %.4f',isoVal),'FontSize',24);                
             end
             
             function slideIsosurfaceReal(hObj,callbackdata)
