@@ -45,7 +45,7 @@ classdef PostPhasor < handle
             
             try
                 postPhasor.experiment = input_param.experiment;
-                 postPhasor.experiment.wavelength = postPhasor.h*postPhasor.c/postPhasor.experiment.energy;
+                postPhasor.experiment.wavelength = postPhasor.h*postPhasor.c/postPhasor.experiment.energy;
             catch
                 warning('No experimental parameters found! Coordinate transform is not possible!')
             end
