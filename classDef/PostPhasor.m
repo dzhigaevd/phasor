@@ -19,6 +19,8 @@ classdef PostPhasor < handle
         strain_histogram;
         strain_histogram_vector;
         strain_mask;
+        strain_mask_bulk;
+        strain_mask_shell;
         plotting;
         mask;           
         prtf;
@@ -140,7 +142,7 @@ classdef PostPhasor < handle
             
             try
                 postPhasor.strain = flip(postPhasor.strain,dimension);
-                postPhasor.strain_mask = flip(postPhasor.strain_mask,dimension);
+                postPhasor.strain_mask.whole = flip(postPhasor.strain_mask.whole,dimension);
                 fprintf('Strain is flipped along dimension %d\n',dimension);
             catch
                 error('Strain can not be flipped along selected dimension');
@@ -251,11 +253,11 @@ classdef PostPhasor < handle
             mask_shift(abs(strain_axis)) = 1;
 
             if abs(strain_axis) == 1
-                postPhasor.strain_mask = postPhasor.mask(1:end-1,:,:);
+                postPhasor.strain_mask.whole = postPhasor.mask(1:end-1,:,:);
             end
 
-            postPhasor.strain_mask = postPhasor.strain_mask+circshift(postPhasor.strain_mask,mask_shift);
-            postPhasor.strain_mask = postPhasor.strain_mask == 2;
+            postPhasor.strain_mask.whole = postPhasor.strain_mask.whole+circshift(postPhasor.strain_mask.whole,mask_shift);
+            postPhasor.strain_mask.whole = postPhasor.strain_mask.whole == 2;
             
             postPhasor.update_plotting_vectors;
         end
@@ -318,49 +320,86 @@ classdef PostPhasor < handle
             mask_shift(abs(strain_axis)) = 1;
 
             if abs(strain_axis) == 1
-                postPhasor.strain_mask = postPhasor.mask(1:end-1,:,:);
+                postPhasor.strain_mask.whole = postPhasor.mask(1:end-1,:,:);
             end
 
-            postPhasor.strain_mask = postPhasor.strain_mask+circshift(postPhasor.strain_mask,mask_shift);
-            postPhasor.strain_mask = postPhasor.strain_mask == 2;
+            postPhasor.strain_mask.whole = postPhasor.strain_mask.whole+circshift(postPhasor.strain_mask.whole,mask_shift);
+            postPhasor.strain_mask.whole = postPhasor.strain_mask.whole == 2;
             
             postPhasor.update_plotting_vectors;
         end
         
-        function calculate_strain_histogram(postPhasor)
+        function calculate_strain_histogram(postPhasor, domain)
+            if ~exist('domain')
+                domain = 'full';                
+            end
+            % Use an input parameter to show other complex valued matrix
+            switch domain
+                case 'full'
+                    strain_mask = postPhasor.strain_mask;      
+                    disp('Histogram of strain in the full object volume');
+                case 'bulk'
+                    strain_mask = postPhasor.strain_mask_bulk;  
+                    disp('Histogram of strain in the bulk object volume');
+                case 'shell'
+                    strain_mask = postPhasor.strain_mask_shell;  
+                    disp('Histogram of strain in the shell object volume');
+            end
+            
+            input = postPhasor.strain.*strain_mask;
+            % Test feature: exclude all 0 values of strain
+            
             figure;
-            hH = histogram(postPhasor.strain(:),'Normalization','probability'); %             
+            [hV,edges] = histcounts(input,200,'Normalization','probability'); % 
+            max_val = max(hV);
+            [val, pos] = find(hV == max_val);
+            fprintf('%.2f%% of strain values are in the range: [%.2e : %.2e]%%\n', max(hV)*100, edges(pos)*100, edges(pos+1)*100);                      
+            
+            hH = histogram(input(input~=0),100,'Normalization','probability'); %  
             set(gca,'FontSize',24);
             yline(max(hH.Values(:))/2); 
             yline(max(hH.Values(:))/4);             
             xlabel('Strain');
-            ylabel('Probability');
-            
+            ylabel('Probability');         
+                
             postPhasor.strain_histogram = hH.Values;
-            postPhasor.strain_histogram_vector = hH.BinEdges(1:end-1);
+            postPhasor.strain_histogram_vector = hH.BinEdges(1:end-1);                        
             
-            lorentzian_fit(hH);
+            figure; 
+            plot(hH.BinEdges(1:end-1),log10(hH.Values));
+            title('log-plot of probability');
+        end
+        
+        function segment_strain_mask(postPhasor,sigma,threshold)
+            if nargin == 1
+                sigma = 6;
+                threshold = 0.75;
+            elseif nargin == 2
+                threshold = 0.75;
+            end
             
-            function [fitresult, gof] = lorentzian_fit(hH)                 
-                [xData, yData] = prepareCurveData( [], hH.Values );
-
-                % Set up fittype and options.
-                ft = fittype( '1/(3.14*a*(1+((x-b)/a).^2))');
-                opts = fitoptions( 'Method', 'NonlinearLeastSquares' );
-                opts.Display = 'Off';
-                opts.StartPoint = [0.253634655350243 0.911927014033797];
-
-                % Fit model to data.
-                [fitresult, gof] = fit( xData, yData, ft)
-
-                % Plot fit with data.
-                figure( 'Name', 'untitled fit 1' );
-                h = plot( fitresult, xData, yData );
-                legend( h, 'Histogram', 'Lorentzian fit', 'Location', 'NorthEast', 'Interpreter', 'none' );
-                % Label axes
-                ylabel( 'Probability', 'Interpreter', 'none' );
-                grid on
-            end                
+            if isempty(postPhasor.object)
+                error('No object defined! Create object first!')
+            else
+                try
+                    temp = imgaussfilt3(double(postPhasor.strain_mask),[sigma sigma sigma]);
+                catch
+                    error('Wrong dimensionality of the input data. Expect 3D');
+                end
+                                
+                postPhasor.strain_mask_bulk = temp>threshold; 
+                postPhasor.strain_mask_shell = postPhasor.strain_mask-postPhasor.strain_mask_bulk; 
+                          
+                % Estimate shell thickness
+                a = zeros(100,1);
+                a(25:75) = 1;
+                b = imgaussfilt(a,sigma);
+                c = b>threshold;                
+                s = sum(a-c)/2;
+                th = s*postPhasor.object_sampling;
+                fprintf('Mask is shrinked by sigma %.3f at threshold %.3f\n',sigma, threshold);
+                fprintf('Shell thickness: %.2f nm\n',th*1e9);
+            end
         end
         
         function calculate_prtf(postPhasor)
@@ -485,9 +524,23 @@ classdef PostPhasor < handle
             vis3d(double(angle(postPhasor.object)), abs(postPhasor.object)>0.1);
         end
         
-        function iso3d_strain(postPhasor)
+        function iso3d_strain(postPhasor,domain)
+            if ~exist('domain')
+                domain = 'full';
+            end
             % Use an input parameter to show other complex valued matrix
-            input = postPhasor.strain.*postPhasor.strain_mask;      
+            switch domain
+                case 'full'
+                    strain_mask = postPhasor.strain_mask;      
+                    disp('Displaying full strain isosurface');
+                case 'bulk'
+                    strain_mask = postPhasor.strain_mask_bulk;  
+                    disp('Displaying bulk strain isosurface');
+                case 'shell'
+                    strain_mask = postPhasor.strain_mask_shell;  
+                    disp('Displaying shell strain isosurface');
+            end
+            input = postPhasor.strain.*strain_mask;
             
             handle = figure;     
             
@@ -496,27 +549,27 @@ classdef PostPhasor < handle
             ax = axes('Parent',panel); 
             
             uicontrol('Parent',handle,'Style',...
-            'slider','Min',min(postPhasor.strain(:)),'Max',max(postPhasor.strain(:)),...
+            'slider','Min',min(input(:)),'Max',max(input(:)),...
             'Value',0,'Units','Normalized',...
             'Position', [0.1 0.05 0.3 0.03],...
             'Callback', @slideIsosurfaceReal); 
                     
-            isoVal = min(postPhasor.strain(:));          
+            isoVal = min(input(:));          
             hText = uicontrol('Parent',handle,'Style','text','String',sprintf('Strain value: %.4f',isoVal),'Units','Normalized',...
             'Position', [0.4 0.05 0.3 0.03]);
-            drawIsosurface(input,isoVal);            
+            drawIsosurface(input,isoVal,strain_mask);            
             
-            function drawIsosurface(input,isoVal)
+            function drawIsosurface(input,isoVal,strain_mask)
                 cla(ax);
                 axes(ax);
                 
                 % Shape isosurface  
-                isosurface(postPhasor.strain_mask);alpha(0.2)
+                isosurface(strain_mask);alpha(0.2)
                 xlabel('x, [nm]'); ylabel('y, [nm]'); zlabel('z, [nm]'); 
                 hold on;            
                 
                 % Strain isosurface
-                isosurface(input,isoVal);
+                isosurface(input,isoVal);hold on                
                 xlabel('x, [nm]'); ylabel('y, [nm]'); zlabel('z, [nm]'); 
                 rotate3d on;
                 grid on;
@@ -532,7 +585,7 @@ classdef PostPhasor < handle
             
             function slideIsosurfaceReal(hObj,callbackdata)
                 isoVal = get(hObj,'Value');                 
-                drawIsosurface(input,isoVal);
+                drawIsosurface(input,isoVal,strain_mask);
             end  
         end
         
@@ -819,7 +872,7 @@ classdef PostPhasor < handle
             
             savemat2vtk(fullfile(save_path, 'object.vtk'),      postPhasor.object.*postPhasor.mask,     postPhasor.object_sampling);
             savemat2vtk(fullfile(save_path, 'displacement.vtk'),postPhasor.mask,                        postPhasor.object_sampling,     postPhasor.displacement.*postPhasor.mask);
-            savemat2vtk(fullfile(save_path, 'strain.vtk'),      postPhasor.strain_mask,                 postPhasor.object_sampling,     postPhasor.strain.*postPhasor.strain_mask);
+            savemat2vtk(fullfile(save_path, 'strain.vtk'),      postPhasor.strain_mask,           postPhasor.object_sampling,     postPhasor.strain.*postPhasor.strain_mask);
             
             % Save the whole instance
             save(fullfile(save_path, sprintf('postPhasor_%s.mat',postPhasor.dataTime)),'postPhasor');
