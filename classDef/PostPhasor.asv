@@ -330,6 +330,9 @@ classdef PostPhasor < handle
         end
         
         function calculate_strain_histogram(postPhasor, domain)
+            % Calculation of histogram inside the domain selected
+            % Plot the histogram
+            
             if ~exist('domain')
                 domain = 'full';                
             end
@@ -385,6 +388,7 @@ classdef PostPhasor < handle
             end
             
             set(gca,'FontSize',24); 
+            set(gcf,'Units','normalized','Position',[0.1,0.1,0.5,0.5]); 
             xline(0,'--');
             yline(max(hH.Values(:))/2,'r'); 
             yline(max(hH.Values(:))/4,'g');             
@@ -409,7 +413,7 @@ classdef PostPhasor < handle
         
         function segment_strain_mask(postPhasor,sigma,threshold)
             if nargin == 1
-                sigma = 6;
+                sigma = 3;
                 threshold = 0.75;
             elseif nargin == 2
                 threshold = 0.75;
@@ -580,7 +584,7 @@ classdef PostPhasor < handle
             input = postPhasor.strain.*strain_mask;
             
             handle = figure;     
-            
+            set(gcf,'Units','Normalized','Position',[.1 0.1 .5 .8])
             panel = uipanel('Parent',handle,'Title','Strain distribution','FontSize',...
             12,'Units','Normalized','Position',[.1 0.1 .77 .85]);         
             ax = axes('Parent',panel); 
@@ -590,7 +594,13 @@ classdef PostPhasor < handle
             'Value',0,'Units','Normalized',...
             'Position', [0.1 0.05 0.3 0.03],...
             'Callback', @slideIsosurfaceReal); 
-                    
+            
+            uicontrol('Parent',handle,'Style',...
+            'slider','Min',0,'Max',1,...
+            'Value',0.2,'Units','Normalized',...
+            'Position', [0.6 0.05 0.3 0.03],...
+            'Callback', @slideAlpha);
+        
             isoVal = min(input(:));          
             hText = uicontrol('Parent',handle,'Style','text','String',sprintf('Strain value: %.4f',isoVal),'Units','Normalized',...
             'Position', [0.4 0.05 0.3 0.03]);
@@ -619,6 +629,11 @@ classdef PostPhasor < handle
                 colormap jet;    
                 set(hText,'String',sprintf('Strain value: %.4f',isoVal),'FontSize',24);                
             end
+            
+            function slideAlphahObj,callbackdata)
+                isoVal = get(hObj,'Value');                 
+                drawIsosurface(input,isoVal,strain_mask);
+            end 
             
             function slideIsosurfaceReal(hObj,callbackdata)
                 isoVal = get(hObj,'Value');                 

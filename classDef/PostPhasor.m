@@ -330,6 +330,9 @@ classdef PostPhasor < handle
         end
         
         function calculate_strain_histogram(postPhasor, domain)
+            % Calculation of histogram inside the domain selected
+            % Plot the histogram
+            
             if ~exist('domain')
                 domain = 'full';                
             end
@@ -385,6 +388,7 @@ classdef PostPhasor < handle
             end
             
             set(gca,'FontSize',24); 
+            set(gcf,'Units','normalized','Position',[0.1,0.1,0.5,0.5]); 
             xline(0,'--');
             yline(max(hH.Values(:))/2,'r'); 
             yline(max(hH.Values(:))/4,'g');             
@@ -568,40 +572,51 @@ classdef PostPhasor < handle
             % Use an input parameter to show other complex valued matrix
             switch domain
                 case 'full'
-                    strain_mask = postPhasor.strain_mask;      
+                    strain_mask = postPhasor.strain_mask;  
+                    title_s = 'Full object';
                     disp('Displaying full strain isosurface');
                 case 'bulk'
-                    strain_mask = postPhasor.strain_mask_bulk;  
+                    strain_mask = postPhasor.strain_mask_bulk; 
+                    title_s = 'Bulk';
                     disp('Displaying bulk strain isosurface');
                 case 'shell'
                     strain_mask = postPhasor.strain_mask_shell;  
+                    title_s = 'Shell';
                     disp('Displaying shell strain isosurface');
             end
-            input = postPhasor.strain.*strain_mask;
-            
+            input = postPhasor.strain.*strain_mask;            
             handle = figure;     
-            
+            set(gcf,'Units','Normalized','Position',[.1 0.1 .5 .8]);            
             panel = uipanel('Parent',handle,'Title','Strain distribution','FontSize',...
-            12,'Units','Normalized','Position',[.1 0.1 .77 .85]);         
+            12,'Units','Normalized','Position',[.1 0.1 .77 .85]); 
+            
             ax = axes('Parent',panel); 
+            title(title_s);
             
             uicontrol('Parent',handle,'Style',...
             'slider','Min',min(input(:)),'Max',max(input(:)),...
             'Value',0,'Units','Normalized',...
             'Position', [0.1 0.05 0.3 0.03],...
             'Callback', @slideIsosurfaceReal); 
-                    
-            isoVal = min(input(:));          
+            
+            uicontrol('Parent',handle,'Style',...
+            'slider','Min',0,'Max',1,...
+            'Value',0.2,'Units','Normalized',...
+            'Position', [0.7 0.05 0.2 0.03],...
+            'Callback', @slideAlpha);
+        
+            isoVal = min(input(:)); 
+            alphaVal = 0.2;
             hText = uicontrol('Parent',handle,'Style','text','String',sprintf('Strain value: %.4f',isoVal),'Units','Normalized',...
             'Position', [0.4 0.05 0.3 0.03]);
-            drawIsosurface(input,isoVal,strain_mask);            
+            drawIsosurface(input,alphaVal,isoVal,strain_mask);            
             
-            function drawIsosurface(input,isoVal,strain_mask)
+            function drawIsosurface(input,alphaVal,isoVal,strain_mask)
                 cla(ax);
                 axes(ax);
                 
                 % Shape isosurface  
-                isosurface(strain_mask);alpha(0.2)
+                isosurface(strain_mask); alpha(alphaVal)
                 xlabel('x, [nm]'); ylabel('y, [nm]'); zlabel('z, [nm]'); 
                 hold on;            
                 
@@ -617,12 +632,17 @@ classdef PostPhasor < handle
                 h3 = light; h3.Position = [-1 -1 -1];  
                 h4 = light; h4.Position= [1 1 1];           
                 colormap jet;    
-                set(hText,'String',sprintf('Strain value: %.4f',isoVal),'FontSize',24);                
+                set(hText,'String',sprintf('Strain value: %.4f',isoVal),'FontSize',24);                                
             end
+            
+            function slideAlpha(hObj,callbackdata)
+                alphaVal = get(hObj,'Value');                 
+                drawIsosurface(input,alphaVal,isoVal,strain_mask);
+            end 
             
             function slideIsosurfaceReal(hObj,callbackdata)
                 isoVal = get(hObj,'Value');                 
-                drawIsosurface(input,isoVal,strain_mask);
+                drawIsosurface(input,alphaVal,isoVal,strain_mask);
             end  
         end
         
