@@ -339,11 +339,19 @@ classdef PostPhasor < handle
                     strain_mask = postPhasor.strain_mask;      
                     disp('Histogram of strain in the full object volume');
                 case 'bulk'
-                    strain_mask = postPhasor.strain_mask_bulk;  
-                    disp('Histogram of strain in the bulk object volume');
+                    if isempty(postPhasor.strain_mask_bulk)
+                        error('No segmentation done! Use .segment_strain_mask')
+                    else
+                        strain_mask = postPhasor.strain_mask_bulk;  
+                        disp('Histogram of strain in the bulk object volume');                    
+                    end
                 case 'shell'
-                    strain_mask = postPhasor.strain_mask_shell;  
-                    disp('Histogram of strain in the shell object volume');
+                    if isempty(postPhasor.strain_mask_shell)
+                        error('No segmentation done! Use .segment_strain_mask')
+                    else
+                        strain_mask = postPhasor.strain_mask_shell;  
+                        disp('Histogram of strain in the shell object volume');
+                    end
             end
             
             input = postPhasor.strain.*strain_mask;
