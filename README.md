@@ -1,6 +1,7 @@
 ![Image description](/introLogo.png)
 
 Easy, fast, configurable version of phasor. For BCDI reconstruction and post-processing.
+If you would like to collaborate or provide any suggestion send me a message: dmitry.dzhigaev@sljus.lu.se
 
 Currently the code undergoes testing with APS 34 ID-C data.
 
