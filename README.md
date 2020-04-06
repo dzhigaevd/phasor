@@ -1,4 +1,4 @@
-![Image description](/introLogo.png)
+![Image description](img/introLogo.png)
 
 Easy, fast, configurable version of phasor. For BCDI reconstruction and post-processing.
 If you would like to collaborate or provide any suggestion send me a message: dmitry.dzhigaev@sljus.lu.se
