@@ -266,7 +266,11 @@ classdef Phasor < handle
                 phasor.object_fft_mod = abs(fftNc(input.*phasor.support));
             end
         end
-             
+
+        function truncate_amplitude(phasor, threshold)
+            phasor.support = abs(phasor.object)>threshold*(max(abs(phasor.object(:))));
+        end
+
         % Phase retrieval methods %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         function SW(phasor, sigma, threshold)
             if isempty(phasor.object)
@@ -322,6 +326,8 @@ classdef Phasor < handle
                 fprintf('Support is shrinked by sigma %.3f at threshold %.3f\n',sigma, threshold(pos(1)));
             end
         end
+        
+
         
         function ER(phasor,n,show_progress)
             for ii = 1:n                                                                
@@ -598,9 +604,8 @@ classdef Phasor < handle
         function save_reconstruction(phasor,marker)            
             rec_path = [phasor.data_meta.save_path, sprintf('/Scan_%s_%s',phasor.data_meta.algo_list,phasor.data_meta.dataTime)];
             mkdir(rec_path);
-            obj = phasor.reconstruction.object;
-            pitch = phasor.reconstruction.object_pitch;
-            save([rec_path, sprintf('/reconstruction_%s.mat', marker)],'obj','pitch');
+            obj = phasor.object;            
+            save([rec_path, sprintf('/reconstruction_%s.mat', marker)],'obj');
             fprintf('Saved the object to: %s',[rec_path, sprintf('/reconstruction_%s.mat\n',marker)]);
         end               
         
