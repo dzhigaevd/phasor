@@ -32,17 +32,32 @@ classdef Phasor < handle
     
     % - Constructor of the object -    
     methods
-        function phasor = Phasor(input_param)                
+        function phasor = Phasor(input_param,data)       
             phasor.data_meta = input_param;
-            
             phasor.metric.val.sharpness = [];
             phasor.metric.val.reciprocal = [];
             phasor.data_meta.algo_list = '';
             phasor.experiment.wavelength = phasor.h*phasor.c/phasor.data_meta.energy;
             phasor.current_iterate = 1;
-           
+            disp('PHASOR object created succesfully!');
+            if nargin==2                                
+                phasor.data = single(sqrt(double(data)));
+                phasor.data_meta.data_size = size(phasor.data);
+            
+                fprintf('Data loaded: %s\n',phasor.data_meta.data_path);
+                fprintf('Data size: [%d %d %d]\n',phasor.data_meta.data_size);      
                 
-            disp('PHASOR object created succesfully');
+                phasor.data(isnan(phasor.data)) = 0;
+                if phasor.data<0
+                    phasor.data_gap = (phasor.data==-1);
+                    phasor.data(phasor.data_gap) = 0;
+                    disp('Gaps are recorded!');
+                else
+                    phasor.data_gap = (phasor.data==-1);
+                    disp('No gaps');
+                end  
+            end
+            
         end
     end  
     
@@ -503,7 +518,75 @@ classdef Phasor < handle
         function slice3d_object(phasor)
             vis3d(double(angle(phasor.object).*phasor.support), phasor.support);
         end
-                
+        
+        function iso3d(phasor)
+            % Use an input parameter to show other complex valued matrix            
+            cmap = 'jet';
+            realObject = phasor.object./max(max(max(abs(phasor.object))));       
+            realObject = realObject.*phasor.support;
+            
+            handle = figure;            
+            sH1 = subplot(1,2,1);                             
+            uicontrol('Parent',handle,'Style',...
+            'slider','Min',0,'Max',1,...
+            'Value',0.5,'Units','Normalized',...
+            'Position', [0.1 0.05 0.3 0.03],...
+            'Callback', @slideIsosurfaceReci); 
+            isoVal = 0.5;
+            drawIsosurfaceReci(phasor.data./max(phasor.data(:)),isoVal,cmap,sH1);
+            
+            sH2 = subplot(1,2,2);                          
+            uicontrol('Parent',handle,'Style',...
+            'slider','Min',0,'Max',1,...
+            'Value',0.5,'Units','Normalized',...
+            'Position', [0.6 0.05 0.3 0.03],...
+            'Callback', @slideIsosurfaceReal); 
+            isoVal = 0.5;
+            drawIsosurfaceReal(realObject,isoVal,cmap,sH2);
+
+            linkprop([sH1, sH2],{ 'CameraPosition'});
+            
+            function drawIsosurfaceReal(input,isoVal,cmap,ax)
+                cla(ax);
+                axes(ax);
+                isosurface(abs(input),isoVal,angle(input));
+                xlabel('x, [nm]'); ylabel('y, [nm]'); zlabel('z, [nm]'); 
+                rotate3d on;
+                grid on;
+                axis tight;
+                axis equal; 
+                axis vis3d;
+                h3 = light; h3.Position = [-1 -1 -1];  
+                h4 = light; h4.Position= [1 1 1];           
+                colormap(cmap);
+            end
+            
+            function drawIsosurfaceReci(input,isoVal,cmap,ax)
+                cla(ax);
+                axes(ax);
+                isosurface(input,isoVal*max(input(:)));
+                xlabel('q_x'); ylabel('q_y'); zlabel('q_z'); 
+                rotate3d on;
+                grid on;
+                axis tight;
+                axis equal; 
+                axis vis3d;
+                h3 = light; h3.Position = [-1 -1 -1];  
+                h4 = light; h4.Position= [1 1 1];           
+                colormap(cmap);
+            end
+            
+            function slideIsosurfaceReal(hObj,callbackdata)
+                isoVal = get(hObj,'Value');                 
+                drawIsosurfaceReal(realObject,isoVal,cmap,sH2);
+            end  
+            
+            function slideIsosurfaceReci (hObj,callbackdata)
+                isoVal = get(hObj,'Value');                 
+                drawIsosurfaceReci(phasor.data,isoVal,cmap,sH1);
+            end  
+        end
+        
         function iso3d_object(phasor,input,cmap)
             % Use an input parameter to show other complex valued matrix
             if nargin == 1
@@ -550,11 +633,11 @@ classdef Phasor < handle
             % Use an input parameter to show fft mod of the object
             if nargin == 1
                 cmap = 'jet';
-                input = log10(phasor.data)./max(log10(phasor.data(:)));
+                input = (phasor.data)./max((phasor.data(:)));
                 title_val = 'Data';
             elseif nargin == 2
                 cmap = 'jet';
-                input = log10(phasor.object_fft_mod)./max(log10(phasor.object_fft_mod(:)));
+                input = (phasor.object_fft_mod)./max((phasor.object_fft_mod(:)));
                 title_val = 'Reconstruction';
             end
             

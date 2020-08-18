@@ -63,7 +63,7 @@ O.lambda = postPhasor.experiment.wavelength;
 O.p_sam = 1; % obtained from reconstruction, set to 1 if unknown
 
 % generating the DCS shape
-% O.DCS_shape_REC = (O.DCS_shape_REC_AMP.*exp(1i.*O.DCS_shape_REC_PH));
+O.DCS_shape_REC = abs(O.DCS_shape_REC_AMP.*exp(1i.*O.DCS_shape_REC_PH));
 
 % the old hkl reflection
 O.hkl = [0; 0; 2];
@@ -100,7 +100,6 @@ O.N = size(postPhasor.object,1); % number of pixels along one dimension of squar
 %% 2. Beamline selection
 % beamline-specific plugin for O
 [O.R_dqp_12, O.R_dqp_3, O.R_xyz, O.S_0lab_dir] = plugin_NanoMAX(O.theta_bl, O.chi_bl, O.phi_bl, O.delta_bl, O.gamma_bl, O.rocking_increment, O.rocking_angle);
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 3. Plot options
 % plot the calculated DCS shape
@@ -211,7 +210,8 @@ O.SS_shape_CALC_MASK = single(abs(O.SS_shape_CALC) > amplitude_threshold);
 structure_element = strel('sphere', 3);
 O.SS_shape_CALC_MASK = imerode(imdilate(O.SS_shape_CALC_MASK, structure_element),structure_element); % takes care of dislocation cores
 O.SS_shape_CALC_COM = ceil(centerOfMass(O.SS_shape_CALC_MASK));
-O.SS_shape_CALC = circshift(O.SS_shape_CALC,round( size(O.SS_shape_CALC)/2-O.SS_shape_CALC_COM));
+O.SS_shape_CALC = circshift(O.SS_shape_CALC,( size(O.SS_shape_CALC)/2-O.SS_shape_CALC_COM));
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Saving new reflection shape (DO NOT TOUCH)

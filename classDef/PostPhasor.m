@@ -223,13 +223,35 @@ classdef PostPhasor < handle
             disp('Object centered!');
         end
         
+        function remove_phase_ramp(postPhasor)
+            c0 = size(postPhasor.object)/2;                                                   
+            if numel(size(postPhasor.object)) == 3 
+                for ii = 1:3
+                    dummy = fftNc(postPhasor.object);
+                    c1 = ndimCOM(abs(dummy).^4,'auto');                
+                    d =((-1)^ii)*(c1-c0);                                       
+                    fprintf('Data center: [%.2f, %.2f, %.2f]\nShift by [%.2f, %.2f, %.2f]\n', c1(1), c1(2), c1(3),d(1),d(2),d(3));                    
+                    dummy = imtranslate(dummy,d);
+                    dummy = ifftNc(dummy);
+                    % Average phase value
+                    postPhasor.object = dummy.*exp(-1j*mean(angle(dummy(:))));
+                end
+            elseif numel(postPhasor.data_meta.data_size) == 2
+                c1 = ndimCOM(postPhasor.data,'auto');
+                fprintf('Data center: [%.2f, %.2f]', c1(1), c1(2));
+            else
+                warning('Data dimensionality is wrong!');
+            end                    
+            disp('Phase ramp removed!');
+        end
+        
         function transform2lab(postPhasor)
             switch postPhasor.experiment.beamline
                 case '34idc'
                     DCS_to_SS;
-                case 'P10' 
-            end                       
-            
+                case 'nanomax'
+                    DCS_to_SS_MAXIV_NanoMAX;                  
+            end                                   
             postPhasor.update_plotting_vectors;
         end
         
@@ -254,6 +276,8 @@ classdef PostPhasor < handle
 
             if abs(strain_axis) == 1
                 postPhasor.strain_mask = postPhasor.mask(1:end-1,:,:);
+            elseif abs(strain_axis) == 2
+                postPhasor.strain_mask = postPhasor.mask(:,1:end,:);
             end
 
             postPhasor.strain_mask = postPhasor.strain_mask+circshift(postPhasor.strain_mask,mask_shift);
@@ -651,7 +675,7 @@ classdef PostPhasor < handle
             if nargin == 1
                 cmap = 'jet';
                 input = postPhasor.object./max(max(max(abs(postPhasor.object))));       
-                input = input.*postPhasor.support;
+%                 input = input.*postPhasor.support;
             elseif nargin == 2
                 cmap = 'jet';                
             end            

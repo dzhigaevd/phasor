@@ -6,7 +6,7 @@
 		% if g is two-dimensional, fft2c(g) yields the 2D iDFT of g
 		% if g is multi-dimensional, fft2c(g) yields the 2D iDFT of g for each slice
 		% along the third dimension
-		out = fftshift(fftn(ifftshift(in)));% / sqrt(numel(in));
+		out = fftshift(fftn(ifftshift(in))) / sqrt(numel(in));
 %         out = fftshift(fftn(ifftshift(in))) / nthroot(numel(in),3);
 	end
 	
