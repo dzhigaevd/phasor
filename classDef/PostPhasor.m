@@ -773,7 +773,7 @@ classdef PostPhasor < handle
             set(gca,'FontSize',20);zoom(zoom_value);
         end
         
-        function plot_phase_slice(postPhasor,zoom)            
+        function plot_phase_slice(postPhasor,zoom_value)            
             % Phase central slices
             figure('Position',[100 100 2000 500]);
             subplot(1,3,1);imagesc(postPhasor.plotting.object.vector2,postPhasor.plotting.object.vector1,...
@@ -793,7 +793,7 @@ classdef PostPhasor < handle
             colormap jet
         end
         
-        function plot_displacement_slice(postPhasor, zoom)            
+        function plot_displacement_slice(postPhasor, zoom_value)            
             % Phase central slices
             figure('Position',[100 100 2000 500]);
             subplot(1,3,1);imagesc(postPhasor.plotting.object.vector2,postPhasor.plotting.object.vector1,(postPhasor.displacement(:,:,round(end/2))).*postPhasor.mask(:,:,round(end/2)),'AlphaData',postPhasor.mask(:,:,round(end/2)));
