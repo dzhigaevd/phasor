@@ -106,7 +106,7 @@ classdef PostPhasor < handle
             postPhasor.plotting.object.vector2 = (-size(postPhasor.object,2)/2:size(postPhasor.object,2)/2-1).*postPhasor.object_sampling*1e9;
             postPhasor.plotting.object.vector3 = (-size(postPhasor.object,3)/2:size(postPhasor.object,3)/2-1).*postPhasor.object_sampling*1e9;
             
-            if postPhasor.strain
+            if ~isempty(postPhasor.strain)
                 postPhasor.plotting.strain.vector1 = (-size(postPhasor.strain,1)/2:size(postPhasor.strain,1)/2-1).*postPhasor.object_sampling*1e9; % [nm convention]
                 postPhasor.plotting.strain.vector2 = (-size(postPhasor.strain,2)/2:size(postPhasor.strain,2)/2-1).*postPhasor.object_sampling*1e9;
                 postPhasor.plotting.strain.vector3 = (-size(postPhasor.strain,3)/2:size(postPhasor.strain,3)/2-1).*postPhasor.object_sampling*1e9;
@@ -757,88 +757,120 @@ classdef PostPhasor < handle
             end  
         end
         
-        function plot_amplitude_slice(postPhasor)            
+        function plot_amplitude_slice(postPhasor,zoom_value)            
             figure('Position',[100 100 2000 500]);
             subplot(1,3,1);imagesc(postPhasor.plotting.object.vector2,postPhasor.plotting.object.vector1,abs(postPhasor.object(:,:,round(end/2))));
             axis image;title('Amplitude, dimensions [1,2]');xlabel('Position [nm]');ylabel('Position [nm]');
-            set(gca,'FontSize',20);
+            set(gca,'FontSize',20);zoom(zoom_value);
 
             subplot(1,3,2);imagesc(postPhasor.plotting.object.vector3,postPhasor.plotting.object.vector1,squeeze(abs(postPhasor.object(:,round(end/2),:))));
             axis image;title('Amplitude, dimensions [1,3]');xlabel('Position [nm]');ylabel('Position [nm]');
-            set(gca,'FontSize',20);
+            set(gca,'FontSize',20);zoom(zoom_value);
 
             subplot(1,3,3);imagesc(postPhasor.plotting.object.vector3,postPhasor.plotting.object.vector2,squeeze(abs(postPhasor.object(round(end/2),:,:))));
             axis image;title('Amplitude, dimensions [2,3]');xlabel('Position [nm]');ylabel('Position [nm]');
             colormap bone
-            set(gca,'FontSize',20);
+            set(gca,'FontSize',20);zoom(zoom_value);
         end
         
-        function plot_phase_slice(postPhasor)            
+        function plot_phase_slice(postPhasor,zoom)            
             % Phase central slices
             figure('Position',[100 100 2000 500]);
             subplot(1,3,1);imagesc(postPhasor.plotting.object.vector2,postPhasor.plotting.object.vector1,...
                 angle(postPhasor.object(:,:,round(end/2))).*postPhasor.mask(:,:,round(end/2)),'AlphaData',postPhasor.mask(:,:,round(end/2)));
             axis image;title('Phase');colorbar;xlabel('Position [nm]');ylabel('Position [nm]');
-            set(gca,'FontSize',20);
+            set(gca,'FontSize',20);zoom(zoom_value);
 
             subplot(1,3,2);imagesc(postPhasor.plotting.object.vector3,postPhasor.plotting.object.vector1,...
                 squeeze(angle(postPhasor.object(:,round(end/2),:))).*squeeze(postPhasor.mask(:,round(end/2),:)),'AlphaData',squeeze(postPhasor.mask(:,round(end/2),:)));
             axis image;title('Phase');colorbar;xlabel('Position [nm]');ylabel('Position [nm]');
-            set(gca,'FontSize',20);
+            set(gca,'FontSize',20);zoom(zoom_value);
 
             subplot(1,3,3);imagesc(postPhasor.plotting.object.vector3,postPhasor.plotting.object.vector2,...
                 squeeze(angle(postPhasor.object(round(end/2),:,:))).*squeeze(postPhasor.mask(round(end/2),:,:)),'AlphaData',squeeze(postPhasor.mask(round(end/2),:,:)));
             axis image;title('Phase');colorbar;xlabel('Position [nm]');ylabel('Position [nm]');
-            set(gca,'FontSize',20);
+            set(gca,'FontSize',20);zoom(zoom_value);
             colormap jet
         end
         
-        function plot_displacement_slice(postPhasor)            
+        function plot_displacement_slice(postPhasor, zoom)            
             % Phase central slices
             figure('Position',[100 100 2000 500]);
             subplot(1,3,1);imagesc(postPhasor.plotting.object.vector2,postPhasor.plotting.object.vector1,(postPhasor.displacement(:,:,round(end/2))).*postPhasor.mask(:,:,round(end/2)),'AlphaData',postPhasor.mask(:,:,round(end/2)));
             axis image;title('Displacement');colorbar;xlabel('Position [nm]');ylabel('Position [nm]');
-            set(gca,'FontSize',20);
+            set(gca,'FontSize',20);zoom(zoom_value);
             
             subplot(1,3,2);imagesc(postPhasor.plotting.object.vector3,postPhasor.plotting.object.vector1,squeeze((postPhasor.displacement(:,round(end/2),:))).*squeeze(postPhasor.mask(:,round(end/2),:)),'AlphaData',squeeze(postPhasor.mask(:,round(end/2),:)));
             axis image;title('Displacement');colorbar;xlabel('Position [nm]');ylabel('Position [nm]');
-            set(gca,'FontSize',20);
+            set(gca,'FontSize',20);zoom(zoom_value);
             
             subplot(1,3,3);imagesc(postPhasor.plotting.object.vector3,postPhasor.plotting.object.vector2,squeeze((postPhasor.displacement(round(end/2),:,:))).*squeeze(postPhasor.mask(round(end/2),:,:)),'AlphaData',squeeze(postPhasor.mask(round(end/2),:,:)));
             axis image;title('Displacement');colorbar;xlabel('Position [nm]');ylabel('Position [nm]');
             colormap jet
-            set(gca,'FontSize',20);
+            set(gca,'FontSize',20);zoom(zoom_value);
         end
         
-        function plot_strain_slice(postPhasor)
-            try
-                figure('Position',[100 100 2000 500]);
-                subplot(1,3,1);
-                imagesc(postPhasor.plotting.strain.vector2,...
-                        postPhasor.plotting.strain.vector1(2:end),...
-                        postPhasor.strain(:,:,round(end/2)).*postPhasor.strain_mask(:,:,round(end/2)),...
-                        'AlphaData',postPhasor.strain_mask(:,:,round(end/2)));                    
-                axis image;colorbar;colorbar;title('Strain');xlabel('Position [nm]');ylabel('Position [nm]');
-                set(gca,'FontSize',20);
+        function plot_strain_slice(postPhasor,zoom_value,slice)
+            if nargin == 2
+                try
+                    figure('Position',[100 100 2000 500]);
+                    subplot(1,3,1);
+                    imagesc(postPhasor.plotting.strain.vector2,...
+                            postPhasor.plotting.strain.vector1(2:end),...
+                            postPhasor.strain(:,:,round(end/2)).*postPhasor.strain_mask(:,:,round(end/2)),...
+                            'AlphaData',postPhasor.strain_mask(:,:,round(end/2)));                    
+                    axis image;colorbar;colorbar;title('Strain');xlabel('Position [nm]');ylabel('Position [nm]');
+                    set(gca,'FontSize',20);zoom(zoom_value);
 
-                subplot(1,3,2);
-                imagesc(postPhasor.plotting.strain.vector3,...
-                        postPhasor.plotting.strain.vector1(2:end),...
-                        squeeze(postPhasor.strain(:,round(end/2),:)).*squeeze(postPhasor.strain_mask(:,round(end/2),:)),...
-                        'AlphaData',squeeze(postPhasor.strain_mask(:,round(end/2),:)));
-                axis image;colorbar;colorbar;title('Strain');xlabel('Position [nm]');ylabel('Position [nm]');
-                set(gca,'FontSize',20);
+                    subplot(1,3,2);
+                    imagesc(postPhasor.plotting.strain.vector3,...
+                            postPhasor.plotting.strain.vector1(2:end),...
+                            squeeze(postPhasor.strain(:,round(end/2),:)).*squeeze(postPhasor.strain_mask(:,round(end/2),:)),...
+                            'AlphaData',squeeze(postPhasor.strain_mask(:,round(end/2),:)));
+                    axis image;colorbar;colorbar;title('Strain');xlabel('Position [nm]');ylabel('Position [nm]');
+                    set(gca,'FontSize',20);zoom(zoom_value);
 
-                subplot(1,3,3);
-                imagesc(postPhasor.plotting.strain.vector3,...
-                        postPhasor.plotting.strain.vector2,...
-                        squeeze(postPhasor.strain(round(end/2),:,:)).*squeeze(postPhasor.strain_mask(round(end/2),:,:)),...
-                        'AlphaData',squeeze(postPhasor.strain_mask(round(end/2),:,:)));
-                axis image;colorbar;colorbar;title('Strain');xlabel('Position [nm]');ylabel('Position [nm]');
-                set(gca,'FontSize',20);
-                colormap jet
-            catch
-                error('No strain found!')
+                    subplot(1,3,3);
+                    imagesc(postPhasor.plotting.strain.vector3,...
+                            postPhasor.plotting.strain.vector2,...
+                            squeeze(postPhasor.strain(round(end/2),:,:)).*squeeze(postPhasor.strain_mask(round(end/2),:,:)),...
+                            'AlphaData',squeeze(postPhasor.strain_mask(round(end/2),:,:)));
+                    axis image;colorbar;colorbar;title('Strain');xlabel('Position [nm]');ylabel('Position [nm]');
+                    set(gca,'FontSize',20);zoom(zoom_value);
+                    colormap jet
+                catch
+                    error('No strain found!')
+                end
+            else
+                try
+                    figure('Position',[100 100 2000 500]);
+                    subplot(1,3,1);
+                    imagesc(postPhasor.plotting.strain.vector2,...
+                            postPhasor.plotting.strain.vector1(2:end),...
+                            postPhasor.strain(:,:,slice(3)).*postPhasor.strain_mask(:,:,slice(3)),...
+                            'AlphaData',postPhasor.strain_mask(:,:,slice(3)));                    
+                    axis image;colorbar;colorbar;title('Strain');xlabel('Position [nm]');ylabel('Position [nm]');
+                    set(gca,'FontSize',20);zoom(zoom_value);
+
+                    subplot(1,3,2);
+                    imagesc(postPhasor.plotting.strain.vector3,...
+                            postPhasor.plotting.strain.vector1(2:end),...
+                            squeeze(postPhasor.strain(:,slice(2),:)).*squeeze(postPhasor.strain_mask(:,slice(2),:)),...
+                            'AlphaData',squeeze(postPhasor.strain_mask(:,slice(2),:)));
+                    axis image;colorbar;colorbar;title('Strain');xlabel('Position [nm]');ylabel('Position [nm]');
+                    set(gca,'FontSize',20);zoom(zoom_value);
+
+                    subplot(1,3,3);
+                    imagesc(postPhasor.plotting.strain.vector3,...
+                            postPhasor.plotting.strain.vector2,...
+                            squeeze(postPhasor.strain(slice(1),:,:)).*squeeze(postPhasor.strain_mask(slice(1),:,:)),...
+                            'AlphaData',squeeze(postPhasor.strain_mask(slice(1),:,:)));
+                    axis image;colorbar;colorbar;title('Strain');xlabel('Position [nm]');ylabel('Position [nm]');
+                    set(gca,'FontSize',20);zoom(zoom_value);
+                    colormap jet
+                catch
+                    error('No strain found!')
+                end
             end
         end
         

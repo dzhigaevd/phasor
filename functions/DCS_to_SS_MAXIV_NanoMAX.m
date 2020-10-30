@@ -88,7 +88,7 @@ O.delta_bl = postPhasor.experiment.gamma;
 O.gamma_bl = postPhasor.experiment.delta;
 
 % choose rocking angle and increment in degrees
-O.rocking_angle = 'dtheta'; % 'dphi' rotate about x-axis, 'dtheta' rotate about y-axis for 34-ID-C
+O.rocking_angle = postPhasor.experiment.rocking_motor; % 'dphi' rotate about x-axis, 'dtheta' rotate about y-axis for 34-ID-C
 O.rocking_increment = postPhasor.experiment.angular_step; % rocking angle step size
 
 % detector parameters in m
@@ -254,11 +254,11 @@ if plot_shape == 1
     if amplitudes == 1
         % plotting calculated shape amplitude
         O.plot = patch(isosurface(O.N1grid*O.p_sam, O.N2grid*O.p_sam, O.N3grid*O.p_sam, abs(O.SS_shape_CALC), amplitude_threshold));
-        set(O.plot, 'FaceColor', 'red', 'EdgeColor', 'none', 'FaceAlpha', 0.3);
+        set(O.plot, 'FaceColor', 'red', 'EdgeColor', 'none', 'FaceAlpha', 1);
         if test == 1
             % plotting reconstructed shape amplitude
             O.plot_true = patch(isosurface(O.N1grid*O.p_sam, O.N2grid*O.p_sam, O.N3grid*O.p_sam, abs(O.SS_shape_REC), amplitude_threshold));
-            set(O.plot_true, 'FaceColor', 'blue', 'EdgeColor', 'none', 'FaceAlpha', 0.3);
+            set(O.plot_true, 'FaceColor', 'blue', 'EdgeColor', 'none', 'FaceAlpha', 1);
         end
     else
         % plotting calculated shape isosurface
