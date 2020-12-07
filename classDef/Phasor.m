@@ -55,7 +55,9 @@ classdef Phasor < handle
                 else
                     phasor.data_gap = (phasor.data==-1);
                     disp('No gaps');
-                end  
+                end 
+            else
+                phasor.load_mat;
             end
             
         end
@@ -473,7 +475,8 @@ classdef Phasor < handle
             switch phasor.data_meta.beamline
                 case '34idc'
                     DCS_to_SS;
-                case 'P10' 
+                case 'nanomax'
+                    
             end
         end
         
@@ -615,7 +618,7 @@ classdef Phasor < handle
                 xlabel('x, [nm]'); ylabel('y, [nm]'); zlabel('z, [nm]'); 
                 rotate3d on;
                 grid on;
-                axis tight;
+%                 axis tight;
                 axis equal; 
                 axis vis3d;
                 h3 = light; h3.Position = [-1 -1 -1];  

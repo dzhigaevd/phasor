@@ -102,14 +102,14 @@ classdef PostPhasor < handle
   
         % Class methods %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%                                                                                         
         function update_plotting_vectors(postPhasor)
-            postPhasor.plotting.object.vector1 = (-size(postPhasor.object,1)/2:size(postPhasor.object,1)/2-1).*postPhasor.object_sampling*1e9; % [nm convention]
-            postPhasor.plotting.object.vector2 = (-size(postPhasor.object,2)/2:size(postPhasor.object,2)/2-1).*postPhasor.object_sampling*1e9;
-            postPhasor.plotting.object.vector3 = (-size(postPhasor.object,3)/2:size(postPhasor.object,3)/2-1).*postPhasor.object_sampling*1e9;
+            postPhasor.plotting.object.vector1 = (-size(postPhasor.object,1)/2:size(postPhasor.object,1)/2-1).*postPhasor.object_sampling(1)*1e9; % [nm convention]
+            postPhasor.plotting.object.vector2 = (-size(postPhasor.object,2)/2:size(postPhasor.object,2)/2-1).*postPhasor.object_sampling(2)*1e9;
+            postPhasor.plotting.object.vector3 = (-size(postPhasor.object,3)/2:size(postPhasor.object,3)/2-1).*postPhasor.object_sampling(3)*1e9;
             
             if ~isempty(postPhasor.strain)
-                postPhasor.plotting.strain.vector1 = (-size(postPhasor.strain,1)/2:size(postPhasor.strain,1)/2-1).*postPhasor.object_sampling*1e9; % [nm convention]
-                postPhasor.plotting.strain.vector2 = (-size(postPhasor.strain,2)/2:size(postPhasor.strain,2)/2-1).*postPhasor.object_sampling*1e9;
-                postPhasor.plotting.strain.vector3 = (-size(postPhasor.strain,3)/2:size(postPhasor.strain,3)/2-1).*postPhasor.object_sampling*1e9;
+                postPhasor.plotting.strain.vector1 = (-size(postPhasor.strain,1)/2:size(postPhasor.strain,1)/2-1).*postPhasor.object_sampling(1)*1e9; % [nm convention]
+                postPhasor.plotting.strain.vector2 = (-size(postPhasor.strain,2)/2:size(postPhasor.strain,2)/2-1).*postPhasor.object_sampling(2)*1e9;
+                postPhasor.plotting.strain.vector3 = (-size(postPhasor.strain,3)/2:size(postPhasor.strain,3)/2-1).*postPhasor.object_sampling(3)*1e9;
                 disp('Plotting vectors for strain updated!');
             end
             
@@ -268,7 +268,7 @@ classdef PostPhasor < handle
             if strain_axis < 0
                 postPhasor.strain = flip(diff(flip(postPhasor.displacement,abs(strain_axis)),abs(strain_axis))./postPhasor.object_sampling);
             else
-                postPhasor.strain = flip(diff(postPhasor.displacement,strain_axis)./postPhasor.object_sampling);
+                postPhasor.strain = (diff(postPhasor.displacement,strain_axis)./postPhasor.object_sampling(strain_axis));
             end
             
             mask_shift = [0,0,0];
@@ -335,9 +335,9 @@ classdef PostPhasor < handle
             postPhasor.displacement = -phase./H;
             
             if strain_axis < 0
-                postPhasor.strain = flip(diff(flip(postPhasor.displacement,abs(strain_axis)),abs(strain_axis))./postPhasor.object_sampling);
+                postPhasor.strain = flip(diff(flip(postPhasor.displacement,abs(strain_axis)),abs(strain_axis))./postPhasor.object_sampling(strain_axis));
             else
-                postPhasor.strain = flip(diff(postPhasor.displacement,strain_axis)./postPhasor.object_sampling);
+                postPhasor.strain = flip(diff(postPhasor.displacement,strain_axis)./postPhasor.object_sampling(strain_axis));
             end
             
             mask_shift = [0,0,0];
@@ -461,7 +461,7 @@ classdef PostPhasor < handle
                 b = imgaussfilt(a,sigma);
                 c = b>threshold;                
                 s = sum(a-c)/2;
-                th = s*postPhasor.object_sampling;
+                th = s*postPhasor.object_sampling(1);
                 fprintf('Mask is shrinked by sigma %.3f at threshold %.3f\n',sigma, threshold);
                 fprintf('Shell thickness: %.2f nm\n',th*1e9);
             end
@@ -885,32 +885,32 @@ classdef PostPhasor < handle
                 val = squeeze(abs(postPhasor.object(:,round(end/2),round(end/2))));
                 val_contour = squeeze((postPhasor.mask(:,round(end/2),round(end/2)))).*max(val(:));
                 val_contour_mask = val_contour>0;
-                val_contour_length = sum(val_contour_mask).*postPhasor.object_sampling;
+                val_contour_length = sum(val_contour_mask).*postPhasor.object_sampling(1);
                 
                 plot(postPhasor.plotting.object.vector1,val,'.-');hold on
                 plot(postPhasor.plotting.object.vector1,val_contour,'--');
                 title(sprintf('Amplitude profile: %.2f nm',val_contour_length*1e9));
-                grid on;xlabel('Position [nm]');set(gca,'FontSize',20);
+                grid on;xlabel('Position y [nm]');set(gca,'FontSize',20);
 
                 subplot(1,3,2);
                 val = squeeze(abs(postPhasor.object(round(end/2),:,round(end/2))));
                 val_contour = squeeze((postPhasor.mask(round(end/2),:,round(end/2)))).*max(val(:));                
                 val_contour_mask = val_contour>0;
-                val_contour_length = sum(val_contour_mask).*postPhasor.object_sampling;
+                val_contour_length = sum(val_contour_mask).*postPhasor.object_sampling(2);
                 plot(postPhasor.plotting.object.vector2,val,'.-');hold on
                 plot(postPhasor.plotting.object.vector2,val_contour,'--');
                 title(sprintf('Amplitude profile: %.2f nm',val_contour_length*1e9));
-                grid on;xlabel('Position [nm]');set(gca,'FontSize',20);
+                grid on;xlabel('Position x [nm]');set(gca,'FontSize',20);
 
                 subplot(1,3,3);
                 val = squeeze(abs(postPhasor.object(round(end/2),round(end/2),:)));
                 val_contour = squeeze(postPhasor.mask(round(end/2),round(end/2),:)).*max(val(:));
                 val_contour_mask = val_contour>0;
-                val_contour_length = sum(val_contour_mask).*postPhasor.object_sampling;
+                val_contour_length = sum(val_contour_mask).*postPhasor.object_sampling(3);
                 plot(postPhasor.plotting.object.vector3,val,'.-');hold on
                 plot(postPhasor.plotting.object.vector3,val_contour,'--');
                 title(sprintf('Amplitude profile: %.2f nm',val_contour_length*1e9));
-                grid on;xlabel('Position [nm]');set(gca,'FontSize',20);
+                grid on;xlabel('Position z [nm]');set(gca,'FontSize',20);
             end
             if ismember(volume,['phase', 'all'])       
                 figure;
@@ -975,7 +975,7 @@ classdef PostPhasor < handle
         end
         % Save functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % save the current instance of the object
-        function save_all(postPhasor)      
+        function save_all(postPhasor,zoom_value,slice)      
             postPhasor.dataTime = getTimeStamp;                        
             save_path = fullfile(postPhasor.path, 'post_processing');
             save_path_figures = fullfile(save_path, 'figures');
@@ -991,40 +991,44 @@ classdef PostPhasor < handle
             save(fullfile(save_path, sprintf('postPhasor_%s.mat',postPhasor.dataTime)),'postPhasor');
             
             % Figures
-            postPhasor.plot_amplitude_slice();
+            postPhasor.plot_amplitude_slice(zoom_value);
             hFig = gcf;
             set(hFig,'Units','Inches');
             pos = get(hFig,'Position');
             set(hFig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)]);
             print(hFig,fullfile(save_path_figures,'amplitude_slice.pdf'),'-dpdf','-r0');
             print(hFig,fullfile(save_path_figures,'amplitude_slice.png'),'-dpng','-r0');
+            savefig(hFig,fullfile(save_path_figures,'amplitude_slice.fig'));
             close(hFig);
             
-            postPhasor.plot_phase_slice();
+            postPhasor.plot_phase_slice(zoom_value);
             hFig = gcf;
             set(hFig,'Units','Inches');
             pos = get(hFig,'Position');
             set(hFig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)]);
             print(hFig,fullfile(save_path_figures,'phase_slice.pdf'),'-dpdf','-r0');
             print(hFig,fullfile(save_path_figures,'phase_slice.png'),'-dpng','-r0');
+            savefig(hFig,fullfile(save_path_figures,'phase_slice.fig'));
             close(hFig);
             
-            postPhasor.plot_strain_slice();
+            postPhasor.plot_strain_slice(zoom_value);
             hFig = gcf;
             set(hFig,'Units','Inches');
             pos = get(hFig,'Position');
             set(hFig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)]);
             print(hFig,fullfile(save_path_figures,'strain_slice.pdf'),'-dpdf','-r0');
             print(hFig,fullfile(save_path_figures,'strain_slice.png'),'-dpng','-r0');
+            savefig(hFig,fullfile(save_path_figures,'strain_slice.fig'));
             close(hFig);
             
-            postPhasor.plot_displacement_slice();
+            postPhasor.plot_displacement_slice(zoom_value);
             hFig = gcf;
             set(hFig,'Units','Inches');
             pos = get(hFig,'Position');
             set(hFig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)]);
             print(hFig,fullfile(save_path_figures,'displacement_slice.pdf'),'-dpdf','-r0');
             print(hFig,fullfile(save_path_figures,'displacement_slice.png'),'-dpng','-r0');
+            savefig(hFig,fullfile(save_path_figures,'displacement_slice.fig'));
             close(hFig);
             
             postPhasor.plot_central_profiles('amplitude');
@@ -1034,6 +1038,7 @@ classdef PostPhasor < handle
             set(hFig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)]);
             print(hFig,fullfile(save_path_figures,'amplitude_central_profiles.pdf'),'-dpdf','-r0');
             print(hFig,fullfile(save_path_figures,'amplitude_central_profiles.png'),'-dpng','-r0');
+            savefig(hFig,fullfile(save_path_figures,'amplitude_central_profiles.fig'));
             close(hFig);
             
             fprintf('Saved everything to: %s\n',save_path);

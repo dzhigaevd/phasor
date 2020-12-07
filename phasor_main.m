@@ -6,7 +6,8 @@ addpath('classDef');
 addpath('functions');
 addpath('reconstructionPatterns');
 
-input_param.data_path         = 'E:\DDzhigaev\WorkFolder\Projects\Flexo-photovoltaics\Experiments\APS_34IDC_2018_run3\analysis\processed\Sample3__78  82  86  90  94\data.mat';
+
+input_param.data_path         = '/media/dzhigd/My Passport/DDzhigaev/Data/APS/34ID-C/SolarCells_APS_34ID-C_20201119/Dmitry1120-work/Analysis/CIS_436/data/data.mat';
 % input_param.data_path         = 'data_test.mat';
 input_param.save_folder       = fullfile('/data','netapp','dzhigd','Experiments','34_IDC_APS_STO_AFM_run3_2018','analysis','processed');
 input_param.white_field_path  = fullfile('/data/netapp/dzhigd/Experiments/34_IDC_APS_STO_AFM_run3_2018/APS_34IDC_viewer','white_field_1.mat');
