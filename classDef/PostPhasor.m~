@@ -441,37 +441,35 @@ classdef PostPhasor < handle
 %             title('log-plot of probability');
         end
         
-        function calculate_angular_profile(postPhasor, source, slice, center, radius, startAngle)
-            startAngle = startAngle*pi/180;
+        function calculate_angular_profile(postPhasor, source, slice, center, radius, start_angle)
+            start_angle = start_angle*pi/180;
             switch source
                 case 'displacement'
                     tImg = squeeze(postPhasor.displacement(slice,:,:));  
-                    labelY = 'Displacement,[m]';
                 case 'phase'
                     tImg = squeeze(angle(postPhasor.object(slice,:,:)));  
-                    labelY = 'Phase,[rad]';
             end
             [hd,vd] = meshgrid(-size(tImg,2)/2+1:(size(tImg,2)/2),-size(tImg,1)/2+1:(size(tImg,1)/2));
 
             hd = (hd+size(tImg,2)/2-center(1));
             vd = (vd+size(tImg,1)/2-center(2));
             
-            t = 0:2*pi/180:2*pi;
-            t = t+startAngle;
-            xq = cos(t).*radius;
-            yq = sin(t).*radius;
+            t = 0:2*pi/180:start_angle+2*pi;
+            xq = cosd(t).*radius;
+            yq = sind(t).*radius;
             
             val = interp2(hd,vd,tImg,xq',yq');
             
             figure;
             subplot(2,1,1); imagesc(hd(1,:),vd(:,1),tImg);axis image; colormap jet; colorbar;
-            title('Profile is calculated clockwise from dot marker')
+            title('Profile is calculated clockwise')
             xline(0);
             yline(0);
             line(xq,yq,'Color',[1,1,1]);hold on;
             scatter(xq(1),yq(1),30,[0.25,0.25,0.25],'filled');
             subplot(2,1,2); plot(t,val);
-            xlabel('Angle, [rad]'); ylabel(labelY)                                            
+            
+                                
         end
         
         function segment_strain_mask(postPhasor,sigma,threshold)

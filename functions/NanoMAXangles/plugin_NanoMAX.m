@@ -3,7 +3,7 @@ function [R_dqp_12, R_dqp_3, R_xyz, S_0lab_dir] = plugin_NanoMAX(theta_bl, chi_b
 % adapted by D.Dzhigaev 2020, Lund University
     theta = -phi_bl;
     chi = 90 - chi_bl;
-    phi = theta_bl;
+    phi = -theta_bl;
     delta = -gamma_bl;
     gamma = delta_bl;
 
