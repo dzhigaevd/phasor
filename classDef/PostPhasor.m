@@ -445,33 +445,64 @@ classdef PostPhasor < handle
             startAngle = startAngle*pi/180;
             switch source
                 case 'displacement'
-                    tImg = squeeze(postPhasor.displacement(slice,:,:));  
+                    if slice(1)~=0
+                        tImg = squeeze(postPhasor.displacement(slice(1),:,:));
+                        tAmp = squeeze(abs(postPhasor.object(slice(1),:,:)));
+                        axisN = 1;
+                    elseif slice(2)~=0
+                        tImg = squeeze(postPhasor.displacement(:,slice(2),:));
+                        tAmp = squeeze(abs(postPhasor.object(:,slice(2),:)));                                                
+                        axisN = 2;
+                    elseif slice(3)~=0
+                        tImg = squeeze(postPhasor.displacement(:,:,slice(3)));
+                        tAmp = squeeze(abs(postPhasor.object(:,:,slice(3))));
+                        axisN = 3;
+                    end
                     labelY = 'Displacement,[m]';
                 case 'phase'
-                    tImg = squeeze(angle(postPhasor.object(slice,:,:)));  
+                    tImg = squeeze(angle(postPhasor.object(slice(1),:,:)));  
                     labelY = 'Phase,[rad]';
             end
+            figure;imagesc(tImg);axis image;colormap jet;
+            
             [hd,vd] = meshgrid(-size(tImg,2)/2+1:(size(tImg,2)/2),-size(tImg,1)/2+1:(size(tImg,1)/2));
 
             hd = (hd+size(tImg,2)/2-center(1));
             vd = (vd+size(tImg,1)/2-center(2));
             
-            t = 0:2*pi/180:2*pi;
+            t = 0:2*pi/18:2*pi;
             t = t+startAngle;
             xq = cos(t).*radius;
             yq = sin(t).*radius;
             
             val = interp2(hd,vd,tImg,xq',yq');
             
-            figure;
-            subplot(2,1,1); imagesc(hd(1,:),vd(:,1),tImg);axis image; colormap jet; colorbar;
-            title('Profile is calculated clockwise from dot marker')
-            xline(0);
-            yline(0);
-            line(xq,yq,'Color',[1,1,1]);hold on;
-            scatter(xq(1),yq(1),30,[0.25,0.25,0.25],'filled');
-            subplot(2,1,2); plot(t,val);
-            xlabel('Angle, [rad]'); ylabel(labelY)                                            
+            handle = figure;
+            ax1 = subplot(2,2,1); imagesc(hd(1,:),vd(:,1),tAmp);axis image; colorbar;
+                title('Amplitude of the object');
+            subplot(2,2,2); ax2 = imagesc(hd(1,:),vd(:,1),tImg);axis image; colormap jet; colorbar;
+                title('Profile is calculated clockwise from dot marker')
+                xline(0);
+                yline(0);
+                line(xq,yq,'Color',[1,1,1]);hold on;
+                scatter(xq(1),yq(1),30,[0.25,0.25,0.25],'filled');
+            ax3 = subplot(2,2,[3,4]); plot(t,val);
+            xlabel('Angle, [rad]'); ylabel(labelY)     
+            
+            % GUI
+%             uicontrol('Parent',handle,'Style',...
+%             'slider','Min',1,'Max',size(postPhasor.object,axis),...
+%             'Value',0,'Units','Normalized',...
+%             'Position', [0.1 0.05 0.3 0.03],...
+%             'Callback', @slideSlice);
+        
+%             function slideSlice(hObj,callbackdata)
+%                 posVal = get(hObj,'Value');                 
+%                 plotSlice(input,isoVal);
+%             end
+%             
+%             function plotSlice(input, posVal)
+%                 end
         end
         
         function segment_strain_mask(postPhasor,sigma,threshold)
