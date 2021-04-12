@@ -266,6 +266,11 @@ classdef PostPhasor < handle
             disp('+pi value is added to the phase of the object')
         end
         
+        function twin_object(postPhasor)
+            F = ifftshift(fftn(fftshift(postPhasor.object)));
+            postPhasor.object = fftshift(ifftn(ifftshift(conj(F))));
+        end
+        
         function calculate_strain(postPhasor, strain_axis)
             H = 2*pi/postPhasor.experiment.d_spacing;
 
