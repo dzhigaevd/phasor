@@ -91,8 +91,7 @@ O.rocking_increment = postPhasor.experiment.angular_step; % rocking angle step s
 % detector parameters in m
 O.D = postPhasor.experiment.sample_detector_d; % detector distance in m, put absolute value if known
 O.d = postPhasor.experiment.detector_pitch; % detector pixel size in m--this is effective, becomes larger than actual if binning is used
-O.N = 256; % number of pixels along one dimension of square detector
-
+O.N = size(postPhasor.object); % number of pixels along one dimension of square detector
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 2. Beamline selection
@@ -155,9 +154,11 @@ fprintf('\n...making pixel grids...');
 
 % calculating original voxel size if unknown
 if O.p_sam == 1
-    O.p_sam = O.lambda*O.D/(O.N*O.d);
+    O.p_sam = [O.lambda*O.D/(O.N(1)*O.d),O.lambda*O.D/(O.N(2)*O.d),O.lambda/(O.N(3)*(O.rocking_increment*pi/180))]; % this is just for detector plane
+%     O.p_sam = [O.lambda*O.D/(O.N(1)*O.d),O.lambda*O.D/(O.N(2)*O.d),O.lambda*O.D/(O.N(1)*O.d)]; % this is just for detector plane
 end
 
+postPhasor.object_sampling = O.p_sam;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Make original (O) coordinates (DO NOT TOUCH)
@@ -180,10 +181,10 @@ O.q_3p = O.R_dqp_3*O.Q_lab-O.Q_lab;
 % O.p_sam = 1;
 
 % make x', y', and z' detector conjugated space basis vectors, adapted from Berenguer et al. PRB 88, 144101 (2013).
-O.V_DRS = dot(cross(O.q_3p, O.q_2p), O.q_1p)*O.N1*O.p_sam*O.N2*O.p_sam*O.N3*O.p_sam;
-O.xp = 2*pi*cross(O.N2*O.p_sam*O.q_2p, O.N3*O.p_sam*O.q_3p)./O.V_DRS;
-O.yp = 2*pi*cross(O.N3*O.p_sam*O.q_3p, O.N1*O.p_sam*O.q_1p)./O.V_DRS;
-O.zp = 2*pi*cross(O.N1*O.p_sam*O.q_1p, O.N2*O.p_sam*O.q_2p)./O.V_DRS;
+O.V_DRS = dot(cross(O.q_3p, O.q_2p), O.q_1p)*O.N1*O.p_sam(1)*O.N2*O.p_sam(2)*O.N3*O.p_sam(3);
+O.xp = 2*pi*cross(O.N2*O.p_sam(2)*O.q_2p, O.N3*O.p_sam(3)*O.q_3p)./O.V_DRS;
+O.yp = 2*pi*cross(O.N3*O.p_sam(3)*O.q_3p, O.N1*O.p_sam(1)*O.q_1p)./O.V_DRS;
+O.zp = 2*pi*cross(O.N1*O.p_sam(1)*O.q_1p, O.N2*O.p_sam(2)*O.q_2p)./O.V_DRS;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Map from original DCS to new DCS (DO NOT TOUCH)
@@ -212,6 +213,8 @@ O.SS_shape_CALC_MASK = imerode(imdilate(O.SS_shape_CALC_MASK, structure_element)
 O.SS_shape_CALC_COM = ceil(centerOfMass(O.SS_shape_CALC_MASK));
 O.SS_shape_CALC = circshift(O.SS_shape_CALC, size(O.SS_shape_CALC)/2-O.SS_shape_CALC_COM);
 
+% Output for phasor
+postPhasor.object = O.SS_shape_CALC;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Saving new reflection shape (DO NOT TOUCH)
 if save_reflection == 1
@@ -250,34 +253,34 @@ if plot_shape == 1
     
     if amplitudes == 1
         % plotting calculated shape amplitude
-        O.plot = patch(isosurface(O.N1grid*O.p_sam, O.N2grid*O.p_sam, O.N3grid*O.p_sam, abs(O.SS_shape_CALC), amplitude_threshold));
+        O.plot = patch(isosurface(O.N1grid*O.p_sam(1), O.N2grid*O.p_sam(2), O.N3grid*O.p_sam(3), abs(O.SS_shape_CALC), amplitude_threshold));
         set(O.plot, 'FaceColor', 'red', 'EdgeColor', 'none', 'FaceAlpha', 0.3);
         if test == 1
             % plotting reconstructed shape amplitude
-            O.plot_true = patch(isosurface(O.N1grid*O.p_sam, O.N2grid*O.p_sam, O.N3grid*O.p_sam, abs(O.SS_shape_REC), amplitude_threshold));
+            O.plot_true = patch(isosurface(O.N1grid*O.p_sam(1), O.N2grid*O.p_sam(2), O.N3grid*O.p_sam(3), abs(O.SS_shape_REC), amplitude_threshold));
             set(O.plot_true, 'FaceColor', 'blue', 'EdgeColor', 'none', 'FaceAlpha', 0.3);
         end
     else
         % plotting calculated shape isosurface
-        [faces,verts,colors] = isosurface(O.N1grid*O.p_sam, O.N2grid*O.p_sam, O.N3grid*O.p_sam, abs(O.SS_shape_CALC), amplitude_threshold, angle(O.SS_shape_CALC));
+        [faces,verts,colors] = isosurface(O.N1grid*O.p_sam(1), O.N2grid*O.p_sam(2), O.N3grid*O.p_sam(3), abs(O.SS_shape_CALC), amplitude_threshold, angle(O.SS_shape_CALC));
         O.plot = patch('Vertices', verts, 'Faces', faces, 'FaceVertexCData', colors, 'FaceColor', 'interp', 'edgecolor', 'none');
         if test == 1
             % plotting reconstructed shape isosurface
-            [faces,verts,colors] = isosurface(O.N1grid*O.p_sam, O.N2grid*O.p_sam, O.N3grid*O.p_sam, abs(O.SS_shape_REC), amplitude_threshold, angle(O.SS_shape_REC));
+            [faces,verts,colors] = isosurface(O.N1grid*O.p_sam(1), O.N2grid*O.p_sam(2), O.N3grid*O.p_sam(3), abs(O.SS_shape_REC), amplitude_threshold, angle(O.SS_shape_REC));
             O.plot_true = patch('Vertices', verts, 'Faces', faces, 'FaceVertexCData', colors, 'FaceColor', 'interp', 'edgecolor', 'none');
         end
     end
     
     % plotting x, y and z axes
-    x_axis = quiver3(0, 0, 0, 0.9*O.N1*O.p_sam/2, 0, 0);
+    x_axis = quiver3(0, 0, 0, 0.9*O.N1*O.p_sam(1)/2, 0, 0);
     set(x_axis, 'Color', 'black', 'Linewidth', 2, 'AutoScale', 'off');
-    text(O.N1*O.p_sam/2, 0, 0, 'x_{sam}', 'Color', 'black', 'FontSize', 14);
-    y_axis = quiver3(0, 0, 0, 0, 0.9*O.N2*O.p_sam/2, 0);
+    text(O.N1*O.p_sam(1)/2, 0, 0, 'x_{sam}', 'Color', 'black', 'FontSize', 14);
+    y_axis = quiver3(0, 0, 0, 0, 0.9*O.N2*O.p_sam(2)/2, 0);
     set(y_axis, 'Color', 'black', 'Linewidth', 2, 'AutoScale', 'off');
-    text(0, O.N2*O.p_sam/2, 0, 'y_{sam}', 'Color', 'black', 'FontSize', 14);
-    z_axis = quiver3(0, 0, 0, 0, 0, 0.9*O.N3*O.p_sam/2);
+    text(0, O.N2*O.p_sam(2)/2, 0, 'y_{sam}', 'Color', 'black', 'FontSize', 14);
+    z_axis = quiver3(0, 0, 0, 0, 0, 0.9*O.N3*O.p_sam(3)/2);
     set(z_axis, 'Color', 'black', 'Linewidth', 2, 'AutoScale', 'off');
-    text(0, 0, O.N3*O.p_sam/2, 'z_{sam}', 'Color', 'black', 'FontSize', 14);
+    text(0, 0, O.N3*O.p_sam(3)/2, 'z_{sam}', 'Color', 'black', 'FontSize', 14);
     
     % overlap textbox
     if test == 1
@@ -301,9 +304,10 @@ if plot_shape == 1
     axis equal;
     axis vis3d xy;
     grid on;
-    xlim([-O.N1*O.p_sam/2, O.N1*O.p_sam/2]); ylim([-O.N2*O.p_sam/2, O.N2*O.p_sam/2]); zlim([-O.N3*O.p_sam/2, O.N3*O.p_sam/2]);
+    xlim([-O.N1*O.p_sam(1)/2, O.N1*O.p_sam(1)/2]); ylim([-O.N2*O.p_sam(2)/2, O.N2*O.p_sam(2)/2]); zlim([-O.N3*O.p_sam(3)/2, O.N3*O.p_sam(3)/2]);
     view(viewpoint(1), viewpoint(2));
     lighting gouraud;
+
     if test ~= 1
         camlight('headlight');
     end

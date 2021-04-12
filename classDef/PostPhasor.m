@@ -749,7 +749,7 @@ classdef PostPhasor < handle
             % Use an input parameter to show other complex valued matrix
             if nargin == 1
                 cmap = 'jet';
-                input = postPhasor.object./max(max(max(abs(postPhasor.object))));       
+                input = postPhasor.object./max(abs(postPhasor.object(:)));       
 %                 input = input.*postPhasor.support;
             elseif nargin == 2
                 cmap = 'jet';                
@@ -760,22 +760,29 @@ classdef PostPhasor < handle
             ax = axes('Parent',panel);
             uicontrol('Parent',handle,'Style',...
             'slider','Min',0,'Max',1,...
-            'Value',0.5,'Units','Normalized',...
+            'Value',0.1,'Units','Normalized',...
             'Position', [0.1 0.05 0.3 0.03],...
             'Callback', @slideIsosurfaceReal); 
-            isoVal = 0.5;
+            isoVal = 0.1;
             drawIsosurface(input,isoVal,cmap);
             
             function drawIsosurface(input,isoVal,cmap)
                 cla(ax);
                 axes(ax);
-                isosurface(abs(input),isoVal,angle(input));
+                isosurface(postPhasor.plotting.object.vector1,postPhasor.plotting.object.vector2,postPhasor.plotting.object.vector3,abs(input),isoVal,angle(input));
+                
                 xlabel('x, [nm]'); ylabel('y, [nm]'); zlabel('z, [nm]'); 
-                rotate3d on;
-                grid on;
-                axis tight;
-                axis equal; 
-                axis vis3d;
+                
+                xlim([postPhasor.plotting.object.vector1(1), postPhasor.plotting.object.vector1(end)]);
+                ylim([postPhasor.plotting.object.vector2(1), postPhasor.plotting.object.vector2(end)]);
+                zlim([postPhasor.plotting.object.vector3(1), postPhasor.plotting.object.vector3(end)]);
+                
+                rotate3d on;                
+                daspect([1,1,1]);
+                axis equal;
+                axis vis3d xy;
+                grid on;    
+                colorbar;
                 h3 = light; h3.Position = [-1 -1 -1];  
                 h4 = light; h4.Position= [1 1 1];           
                 colormap(cmap);
