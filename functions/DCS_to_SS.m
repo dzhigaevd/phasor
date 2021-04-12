@@ -198,7 +198,7 @@ O.N2gridp = O.T_DCS_to_SS(2,1)*O.N1grid + O.T_DCS_to_SS(2,2)*O.N2grid + O.T_DCS_
 O.N3gridp = O.T_DCS_to_SS(3,1)*O.N1grid + O.T_DCS_to_SS(3,2)*O.N2grid + O.T_DCS_to_SS(3,3)*O.N3grid;
 
 % interpolate original reflection data in the detector conjugated frame to sample space frame
-O.SS_shape_CALC = interp3(O.N1grid, O.N2grid, O.N3grid, O.DCS_shape_REC, O.N1gridp, O.N2gridp, O.N3gridp, 'linear',  0); % make any values outside original data zero.
+O.SS_shape_CALC = interp3(O.N1grid, O.N2grid, O.N3grid, O.DCS_shape_REC, O.N1gridp, O.N2gridp, O.N3gridp, 'linear', 0); % make any values outside original data zero.
 
 % taking the twin if necessary
 if twin == 1
@@ -206,7 +206,7 @@ if twin == 1
     O.SS_shape_CALC = fftshift(ifftn(ifftshift(conj(F))));
 end
 
-% centring about the centre of mass
+% centering about the centre of mass
 O.SS_shape_CALC_MASK = single(abs(O.SS_shape_CALC) > amplitude_threshold);
 structure_element = strel('sphere', 3);
 O.SS_shape_CALC_MASK = imerode(imdilate(O.SS_shape_CALC_MASK, structure_element),structure_element); % takes care of dislocation cores

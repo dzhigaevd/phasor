@@ -8,7 +8,8 @@ classdef PostPhasor < handle
    
     properties
         data;
-        dataTime;        
+        dataTime; 
+        pre_path;
         path;
         experiment;                        
         object_fft_mod;    
@@ -35,6 +36,7 @@ classdef PostPhasor < handle
         function postPhasor = PostPhasor(input_param)
             
             postPhasor.path = input_param.path;
+            postPhasor.pre_path = input_param.pre_path;
             
             try
                 postPhasor.object = input_param.object;
@@ -264,6 +266,11 @@ classdef PostPhasor < handle
         function add_pi(postPhasor)
             postPhasor.object = postPhasor.object.*exp(1j*pi);
             disp('+pi value is added to the phase of the object')
+        end
+        
+        function add_half_pi(postPhasor)
+            postPhasor.object = postPhasor.object.*exp(1j*pi/2);
+            disp('+pi/2 value is added to the phase of the object')
         end
         
         function twin_object(postPhasor)
@@ -1059,7 +1066,7 @@ classdef PostPhasor < handle
         % save the current instance of the object
         function save_all(postPhasor,zoom_value)      
             postPhasor.dataTime = getTimeStamp;                        
-            save_path = fullfile(postPhasor.path, 'post_processing');
+            save_path = fullfile(postPhasor.pre_path, 'post_processing');
             save_path_figures = fullfile(save_path, 'figures');
             
             mkdir(save_path);
