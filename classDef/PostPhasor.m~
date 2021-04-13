@@ -60,7 +60,8 @@ classdef PostPhasor < handle
             catch
                 error('No real-space sampling defined!');
             end
-                                    
+            
+                        
             disp('PostPhasor instance created succesfully');
         end
     end  
@@ -280,14 +281,13 @@ classdef PostPhasor < handle
         end
         
         function calculate_volume(postPhasor)
-            if ~isempty(postPhasor.support) 
-                postPhasor.volume = sum(postPhasor.support(:))*prod(postPhasor.object_sampling.*1e9);
-                fprintf('The volume calculated from support: %f nm^3\n', postPhasor.volume);
-            else
+            try
+                postPhasor.volume = sum(postPhasor.support(:))*prod(postPhasor.object_sampling);
+                fprintf()
+            catch
                 threshold = 0.1;           
                 v = abs(postPhasor.object) > threshold;
-                postPhasor.volume = sum(v(:))*prod(postPhasor.object_sampling.*1e9);
-                fprintf('The volume calculated from %.1f of amplitude: %f nm^3\n', threshold, postPhasor.volume);
+                postPhasor.volume = sum(v(:))*prod(postPhasor.object_sampling);
             end                        
         end
         
