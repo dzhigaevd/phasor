@@ -282,12 +282,12 @@ classdef PostPhasor < handle
         function calculate_volume(postPhasor)
             if ~isempty(postPhasor.support) 
                 postPhasor.volume = sum(postPhasor.support(:))*prod(postPhasor.object_sampling.*1e9);
-                fprintf('The volume calculated from support: %f nm^3\n', postPhasor.volume);
+                fprintf('The volume calculated from support: %f nm³\n', postPhasor.volume);
             else
                 threshold = 0.1;           
                 v = abs(postPhasor.object) > threshold;
                 postPhasor.volume = sum(v(:))*prod(postPhasor.object_sampling.*1e9);
-                fprintf('The volume calculated from %.1f of amplitude: %f nm^3\n', threshold, postPhasor.volume);
+                fprintf('The volume calculated from %.1f of amplitude: %f nm³\n', threshold, postPhasor.volume);
             end                        
         end
         
