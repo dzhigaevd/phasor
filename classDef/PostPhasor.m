@@ -38,7 +38,7 @@ classdef PostPhasor < handle
         function postPhasor = PostPhasor(input_param)
             
             postPhasor.path = input_param.path;
-            postPhasor.pre_path = input_param.pre_path;
+            postPhasor.pre_path = input_param.pre_path;                       
             
             try
                 postPhasor.object = input_param.object;
@@ -1076,20 +1076,22 @@ classdef PostPhasor < handle
         end
         % Save functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % save the current instance of the object
-        function save_all(postPhasor,zoom_value)      
-            postPhasor.dataTime = getTimeStamp;                        
+        function save_instance(postPhasor)
+            postPhasor.dataTime = getTimeStamp;  
+            % Save the whole instance
+            save_path = fullfile(postPhasor.pre_path, 'post_processing');
+            mkdir(save_path);
+            s = fullfile(save_path, sprintf('postPhasor_%s.mat',postPhasor.dataTime));
+            save(s,'postPhasor');
+            fprintf('+ postPhasor instance is saved to %s\n', s);
+        end
+        
+        function save_figures(postPhasor, zoom_value)            
             save_path = fullfile(postPhasor.pre_path, 'post_processing');
             save_path_figures = fullfile(save_path, 'figures');
             
             mkdir(save_path);
             mkdir(save_path_figures);
-            
-            savemat2vtk(fullfile(save_path, 'object.vtk'),      postPhasor.object.*postPhasor.mask,     postPhasor.object_sampling);
-            savemat2vtk(fullfile(save_path, 'displacement.vtk'),postPhasor.mask,                        postPhasor.object_sampling,     postPhasor.displacement.*postPhasor.mask);
-            savemat2vtk(fullfile(save_path, 'strain.vtk'),      postPhasor.strain_mask,           postPhasor.object_sampling,     postPhasor.strain.*postPhasor.strain_mask);
-            
-            % Save the whole instance
-            save(fullfile(save_path, sprintf('postPhasor_%s.mat',postPhasor.dataTime)),'postPhasor');
             
             % Figures
             postPhasor.plot_amplitude_slice(zoom_value);
@@ -1141,6 +1143,32 @@ classdef PostPhasor < handle
             print(hFig,fullfile(save_path_figures,'amplitude_central_profiles.png'),'-dpng','-r0');
             savefig(hFig,fullfile(save_path_figures,'amplitude_central_profiles.fig'));
             close(hFig);
+            
+            fprintf('+ Figures are saved to %s\n', save_path_figures);
+        end
+        
+        function save_vtk(postPhasor)
+            save_path = fullfile(postPhasor.pre_path, 'post_processing');
+            mkdir(save_path);
+            
+            savemat2vtk(fullfile(save_path, 'object.vtk'),      postPhasor.object.*postPhasor.mask,     postPhasor.object_sampling);
+            savemat2vtk(fullfile(save_path, 'displacement.vtk'),postPhasor.mask,                        postPhasor.object_sampling,     postPhasor.displacement.*postPhasor.mask);
+            savemat2vtk(fullfile(save_path, 'strain.vtk'),      postPhasor.strain_mask,           postPhasor.object_sampling,     postPhasor.strain.*postPhasor.strain_mask);
+            
+            fprintf('+ VTK files are saved to %s\n', save_path);
+        end
+        
+        function save_all(postPhasor,zoom_value)      
+            postPhasor.dataTime = getTimeStamp;                        
+            save_path = fullfile(postPhasor.pre_path, 'post_processing');
+            save_path_figures = fullfile(save_path, 'figures');
+            
+            mkdir(save_path);
+            mkdir(save_path_figures);
+            
+            postPhasor.save_instance;
+            postPhasor.save_figures(zoom_value); 
+            postPhasor.save_vtk;
             
             fprintf('Saved everything to: %s\n',save_path);
         end
