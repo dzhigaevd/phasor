@@ -47,18 +47,18 @@ fprintf('<>---<>---<>---<>---<>---<>---<>---<>---<>---<>---<>---<>---<>\n');
 fprintf('\n...collecting original reflection details...');
 
 % directory to the reconstruction folder
-O.dir = 'Examples';
+O.dir = '/home/dzhigd/work/projects/PerovskiteSolarCells/Experiments/APS-34IDC/19112020/analysis/19112020_639-647/prep';
 
 % name of the reconstruction folder
-O.file_name = 'Rec-Cylinder_(-120)_dtheta-00274-ERlrHIOlr2000-NM-SW';
+O.file_name = 'Rec-A--GAHIOlr-BST-sS-5-3-620-NM-SW';
 
 % importing the -AMP.mat and -PH.mat files from reconstruction
 try
-    O.DCS_shape_REC_AMP = cell2mat(struct2cell(load([O.dir, '/', O.file_name, '/', O.file_name,'-AMP.mat'])));
-    O.DCS_shape_REC_PH = cell2mat(struct2cell(load([O.dir, '/', O.file_name, '/', O.file_name,'-PH.mat'])));
+    O.DCS_shape_REC_AMP = cell2mat(struct2cell(load([O.dir, '/reconstruction', O.file_name, '/', O.file_name,'-AMP.mat'])));
+    O.DCS_shape_REC_PH = cell2mat(struct2cell(load([O.dir, '/reconstruction', O.file_name, '/', O.file_name,'-PH.mat'])));
 catch
-    O.DCS_shape_REC_AMP = cell2mat(struct2cell(load([O.file_name, '/', O.file_name,'-AMP.mat'])));
-    O.DCS_shape_REC_PH = cell2mat(struct2cell(load([O.file_name, '/', O.file_name,'-PH.mat'])));
+    O.DCS_shape_REC_AMP = cell2mat(struct2cell(load([O.dir, '/', O.file_name,'-AMP.mat'])));
+    O.DCS_shape_REC_PH = cell2mat(struct2cell(load([O.dir, '/', O.file_name,'-PH.mat'])));
 end
 
 % generating the DCS shape
@@ -68,7 +68,7 @@ O.DCS_shape_REC = abs(O.DCS_shape_REC_AMP.*exp(1i.*O.DCS_shape_REC_PH));
 O.hkl = [-1; 2; 0];
 
 % wavelength in m for original reflection
-O.lambda = (12.398/10.0)/10*10^-9;
+O.lambda = (12.398/9.0)/10*10^-9;
 
 % get size of the original matrix
 [O.N1, O.N2, O.N3] = size(O.DCS_shape_REC);
@@ -78,20 +78,20 @@ O.p_sam = 1; % obtained from reconstruction, set to 1 if unknown
 % O.theta_bl = 0; % for lab space
 % O.chi_bl = 90; % for lab space
 % O.phi_bl = 0; % for lab space
-O.theta_bl = -25.9718;
-O.chi_bl = 153.4349;
-O.phi_bl = -47.0851;
+O.theta_bl = 1.052025;
+O.chi_bl = 90;
+O.phi_bl = -4.86;
 
 % beamline detector motor angles in degrees
-O.delta_bl = 40.2954;
-O.gamma_bl = 36.0786;
+O.delta_bl = 26.6925;
+O.gamma_bl = 7.495; 
 
 % choose rocking angle and increment in degrees
 O.rocking_angle = 'dtheta'; % 'dphi' rotate about x-axis, 'dtheta' rotate about y-axis for 34-ID-C
-O.rocking_increment = 0.00274; % rocking angle step size
+O.rocking_increment = 0.006; % rocking angle step size
 
 % detector parameters in m
-O.D = 1.7745; % detector distance in m, put absolute value if known
+O.D = 0.5; % detector distance in m, put absolute value if known
 O.d = 5.5e-5; % detector pixel size in m--this is effective, becomes larger than actual if binning is used
 O.N = 256; % number of pixels along one dimension of square detector
 
@@ -111,7 +111,7 @@ addpath(genpath('APS 34-ID-C angles'));
 plot_shape = 1; % 1 to plot calculated DCS shape
 
 % toggle between viewing the thresholded amplitude or isosurface
-amplitudes = 1; % 1 to plot amplitudes, 0 to plot isosurfaces
+amplitudes = 0; % 1 to plot amplitudes, 0 to plot isosurfaces
 amplitude_threshold = 0.3; % 0.3 is a good starting point
 
 % select viewpoint
@@ -126,19 +126,19 @@ viewpoint = [-180, -90]; % viewpoint = [az, el], x-y plane
 save_reflection = 1; % 1 to save, 0 to not save
 
 % choose to take the twin of the new calculated SS shape
-twin = 1; % 1 to take the conjugate reflection
+twin = 0; % 1 to take the conjugate reflection
 
 % save directory
-save_dir = 'Simulated Data'; 
+save_dir = 'ss'; 
 
 % save name
-save_name = 'Cylinder'; 
+save_name = 'try'; 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 5. Testing
  % 1 to test against a reconstructed shape, 0 to not test
-test = 1;
+test = 0;
 
 % directory to the reconstruction folder
 O.dir = 'Examples/Cylinder_(-120)_-36.0786_gamma_40.2954_delta_0.00274_dtheta';

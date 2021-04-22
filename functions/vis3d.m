@@ -507,10 +507,6 @@ function [] = vis3d(seg, support)
             sprintf('%s%03d', titleLines{whichView}, sn(offsliceCoord(whichView))));
     end
 
-
-
-
-
     function IntWinBound(varargin)
         %Here we perform the linear intensity windowing on the images.
         %First, determine the window selected by the user and update the

@@ -55,15 +55,12 @@ O.DCS_shape_REC_PH = angle(postPhasor.object);
 
 % generating the DCS shape
 % O.DCS_shape_REC = abs(O.DCS_shape_REC_AMP.*exp(1i.*O.DCS_shape_REC_PH));
-O.DCS_shape_REC = O.DCS_shape_REC_AMP.*exp(1i.*O.DCS_shape_REC_PH);
-O.DCS_shape_REC = O.DCS_shape_REC./max(O.DCS_shape_REC_AMP(:));
+O.DCS_shape_REC = O.DCS_shape_REC_AMP.*exp(1j.*O.DCS_shape_REC_PH);
+O.DCS_shape_REC = O.DCS_shape_REC./max(O.DCS_shape_REC(:));
 
 % the old hkl reflection
 O.hkl = [2; 2; 2];
 
-% O.H  = 2*pi/postPhasor.experiment.d_spacing;
-% theta2 = asind(sqrt(sind(postPhasor.experiment.theta)^2+sind(postPhasor.experiment.phi)^2));
-% O.H  = 4*pi*sind(theta2)/postPhasor.experiment.wavelength ;
 % wavelength in m for original reflection
 O.lambda = postPhasor.experiment.wavelength;
 
@@ -155,6 +152,7 @@ fprintf('\n...making pixel grids...');
 % calculating original voxel size if unknown
 if O.p_sam == 1
     O.p_sam = [O.lambda*O.D/(O.N(1)*O.d),O.lambda*O.D/(O.N(2)*O.d),O.lambda/(O.N(3)*(O.rocking_increment*pi/180))]; % this is just for detector plane
+%     O.p_sam = [O.lambda*O.D/(O.N*O.d),O.lambda*O.D/(O.N*O.d),O.lambda*O.D/(O.N*O.d)]; % this is just for detector plane
 %     O.p_sam = [O.lambda*O.D/(O.N(1)*O.d),O.lambda*O.D/(O.N(2)*O.d),O.lambda*O.D/(O.N(1)*O.d)]; % this is just for detector plane
 end
 
@@ -163,6 +161,7 @@ postPhasor.object_sampling = O.p_sam;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Make original (O) coordinates (DO NOT TOUCH)
 fprintf('\n...making detector conjugated space coordinates...');
+
 % making S_0lab, S_lab and Q_lab vectors for beamline
 O.S_0lab = 2*pi/O.lambda*O.S_0lab_dir;
 O.S_lab = O.R_dqp_12*O.S_0lab;
@@ -173,7 +172,8 @@ O.x_sam = O.R_xyz*[1; 0; 0];
 O.y_sam = O.R_xyz*[0; 1; 0];
 O.z_sam = O.R_xyz*[0; 0; 1];
 
-% making q_1', q_2', q_3' detector reciprocal space vectors
+% making q_1', q_2', q_3' detector reciprocal space vectors: unitary
+% vectors
 O.q_1p = 2*pi/O.lambda*O.d/O.D*O.R_dqp_12*[1; 0; 0];
 O.q_2p = 2*pi/O.lambda*O.d/O.D*O.R_dqp_12*[0; 1; 0];
 O.q_3p = O.R_dqp_3*O.Q_lab-O.Q_lab;
@@ -181,7 +181,9 @@ O.q_3p = O.R_dqp_3*O.Q_lab-O.Q_lab;
 % O.p_sam = 1;
 
 % make x', y', and z' detector conjugated space basis vectors, adapted from Berenguer et al. PRB 88, 144101 (2013).
-O.V_DRS = dot(cross(O.q_3p, O.q_2p), O.q_1p)*O.N1*O.p_sam(1)*O.N2*O.p_sam(2)*O.N3*O.p_sam(3);
+% O.V_DRS = dot(cross(O.q_3p, O.q_2p), O.q_1p)*O.N1*O.p_sam(1)*O.N2*O.p_sam(2)*O.N3*O.p_sam(3);
+O.V_DRS = dot(cross(O.q_1p, O.q_2p), O.q_3p)*O.N1*O.p_sam(1)*O.N2*O.p_sam(2)*O.N3*O.p_sam(3);
+
 O.xp = 2*pi*cross(O.N2*O.p_sam(2)*O.q_2p, O.N3*O.p_sam(3)*O.q_3p)./O.V_DRS;
 O.yp = 2*pi*cross(O.N3*O.p_sam(3)*O.q_3p, O.N1*O.p_sam(1)*O.q_1p)./O.V_DRS;
 O.zp = 2*pi*cross(O.N1*O.p_sam(1)*O.q_1p, O.N2*O.p_sam(2)*O.q_2p)./O.V_DRS;
