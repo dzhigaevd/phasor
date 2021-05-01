@@ -152,8 +152,6 @@ fprintf('\n...making pixel grids...');
 % calculating original voxel size if unknown
 if O.p_sam == 1
     O.p_sam = [O.lambda*O.D/(O.N(1)*O.d),O.lambda*O.D/(O.N(2)*O.d),O.lambda/(O.N(3)*(O.rocking_increment*pi/180))]; % this is just for detector plane
-%     O.p_sam = [O.lambda*O.D/(O.N*O.d),O.lambda*O.D/(O.N*O.d),O.lambda*O.D/(O.N*O.d)]; % this is just for detector plane
-%     O.p_sam = [O.lambda*O.D/(O.N(1)*O.d),O.lambda*O.D/(O.N(2)*O.d),O.lambda*O.D/(O.N(1)*O.d)]; % this is just for detector plane
 end
 
 postPhasor.object_sampling = O.p_sam;

@@ -242,8 +242,8 @@ classdef PostPhasor < handle
         function rotateObject(postPhasor,rotationAngles)
             
             [x, y, z] = meshgrid(postPhasor.plotting.object.vector1,postPhasor.plotting.object.vector2,postPhasor.plotting.object.vector3);
-            [xn, yn, zn] = [x(:),y(:),z(:)]*
-            objectRotated = interp3(O.N1grid, O.N2grid, O.N3grid, O.DCS_shape_REC, O.N1gridp, O.N2gridp, O.N3gridp, 'linear', 0); % make any values outside original data zero.
+            [xn, yn, zn] = interp3(x, y, z, postPhasor.object, );
+             = interp3(O.N1grid, O.N2grid, O.N3grid, O.DCS_shape_REC, O.N1gridp, O.N2gridp, O.N3gridp, 'linear', 0); % make any values outside original data zero.
 
             try
                 if rotationAngles(1) ~= 0
