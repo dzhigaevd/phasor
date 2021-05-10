@@ -347,6 +347,8 @@ classdef PostPhasor < handle
                 postPhasor.strain_mask = postPhasor.mask(1:end-1,:,:);
             elseif abs(strain_axis) == 2
                 postPhasor.strain_mask = postPhasor.mask(:,1:end-1,:);
+            elseif abs(strain_axis) == 3
+                postPhasor.strain_mask = postPhasor.mask(:,:,1:end-1);
             end
 
             postPhasor.strain_mask = postPhasor.strain_mask+circshift(postPhasor.strain_mask,mask_shift);
