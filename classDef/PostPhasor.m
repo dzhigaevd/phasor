@@ -233,37 +233,38 @@ classdef PostPhasor < handle
                 error('No data found!')
             end
         end                
-               
+        
+        function matchSampling(postPhasor)
+            if postPhasor.object_sampling(1)~=postPhasor.object_sampling(2)~=postPhasor.object_sampling(3)
+                ratio = postPhasor.object_sampling(3)/postPhasor.object_sampling(1);
+                for ii = 1:size(postPhasor.object,1)
+                    t(ii,:,:) = imresize(squeeze(postPhasor.object(ii,:,:)),[size(postPhasor.object,2),size(postPhasor.object,3)*ratio]);
+                end
+                postPhasor.object = t;
+                postPhasor.object_sampling = [postPhasor.object_sampling(1),postPhasor.object_sampling(1),postPhasor.object_sampling(1)];
+                postPhasor.update_plotting_vectors;
+                disp('+ Sampling matched!')
+            else
+                disp('Sampling is already matched!')
+            end
+        end
+        
         function center_object(postPhasor)
             [postPhasor.object, com_val] = center_array_com(postPhasor.object);            
             disp('Object centered!');
         end
         
         function rotateObject(postPhasor,rotationAngles)
-            
-            [x, y, z] = meshgrid(postPhasor.plotting.object.vector1,postPhasor.plotting.object.vector2,postPhasor.plotting.object.vector3);
-            [xn, yn, zn] = [x(:),y(:),z(:)]*
-            objectRotated = interp3(O.N1grid, O.N2grid, O.N3grid, O.DCS_shape_REC, O.N1gridp, O.N2gridp, O.N3gridp, 'linear', 0); % make any values outside original data zero.
-
             try
-                if rotationAngles(1) ~= 0
-                    for ii = 1:size(postPhasor.object,1)
-                        object_new(ii,:,:) = imrotate(squeeze(object_new(ii,:,:)),rotationAngles(1),'crop');
-                    end
-                end
-                
-                if rotationAngles(2) ~= 0
-                    for ii = 1:size(postPhasor.object,2)
-                        object_new(:,ii,:) = imrotate(squeeze(object_new(:,ii,:)),rotationAngles(2),'crop');
-                    end
-                end
-                
-                if rotationAngles(3) ~= 0
-                    for ii = 1:size(postPhasor.object,3)
-                        object_new(:,:,ii) = imrotate(squeeze(object_new(:,:,ii)),rotationAngles(3),'crop');
-                    end
-                end     
-                postPhasor.object = object_new;
+                [x, y, z] = meshgrid(postPhasor.plotting.object.vector1,postPhasor.plotting.object.vector2,postPhasor.plotting.object.vector3);                       
+
+                U = rotxd(rotationAngles(1))*rotyd(rotationAngles(2))*rotzd(rotationAngles(3));
+
+                coordinatesNew = [x(:),y(:),z(:)]*U;
+                postPhasor.object = interp3(x, y, z, postPhasor.object, reshape(coordinatesNew(:,1),size(postPhasor.object)), reshape(coordinatesNew(:,2),size(postPhasor.object)),reshape(coordinatesNew(:,3),size(postPhasor.object)), 'linear', 0); % make any values outside original data zero.
+%                 postPhasor.object_sampling = [abs(coordinatesNew(2,1)-coordinatesNew(1,1)),abs(coordinatesNew(2,2)-coordinatesNew(1,2)),abs(coordinatesNew(2,3)-coordinatesNew(1,3))];                
+                postPhasor.update_plotting_vectors;
+                disp('+ Object rotated!')
             catch
                 warning('Can not rotate object!');
             end
@@ -334,9 +335,9 @@ classdef PostPhasor < handle
             postPhasor.displacement = -angle(postPhasor.object)./H;
             
             if strain_axis < 0
-                postPhasor.strain = flip(diff(flip(postPhasor.displacement,abs(strain_axis)),abs(strain_axis))./postPhasor.object_sampling(abs(strain_axis)));
+                postPhasor.strain = flip(diff(flip(postPhasor.displacement,abs(strain_axis)),1,abs(strain_axis))./postPhasor.object_sampling(abs(strain_axis)),abs(strain_axis));
             else
-                postPhasor.strain = (diff(postPhasor.displacement,strain_axis)./postPhasor.object_sampling(strain_axis));
+                postPhasor.strain = diff(postPhasor.displacement,1,strain_axis)./postPhasor.object_sampling(strain_axis);
             end
             
             mask_shift = [0,0,0];
@@ -345,7 +346,7 @@ classdef PostPhasor < handle
             if abs(strain_axis) == 1
                 postPhasor.strain_mask = postPhasor.mask(1:end-1,:,:);
             elseif abs(strain_axis) == 2
-                postPhasor.strain_mask = postPhasor.mask(:,1:end,:);
+                postPhasor.strain_mask = postPhasor.mask(:,1:end-1,:);
             end
 
             postPhasor.strain_mask = postPhasor.strain_mask+circshift(postPhasor.strain_mask,mask_shift);
@@ -897,60 +898,83 @@ classdef PostPhasor < handle
             end  
         end
         
+        function setZoom(postPhasor,zoom_value)
+            if numel(zoom_value) == 1
+                postPhasor.plotting.zoom_value = repmat(zoom_value,[1,3]);
+            elseif numel(zoom_value) ~= 3
+                error('- Wrong number of zoom values!');
+            else
+                postPhasor.plotting.zoom_value = zoom_value;
+                fprintf('+ Zoom values are set to: [%.2f, %.2f, %.2f]!\n',postPhasor.plotting.zoom_value(1),postPhasor.plotting.zoom_value(2),postPhasor.plotting.zoom_value(3));                
+            end
+        end
+        
         function plot_amplitude_slice(postPhasor,zoom_value)            
+            
+            postPhasor.setZoom(zoom_value); % should be 3-element vector
+            
             figure('Position',[100 100 2000 500]);
             subplot(1,3,1);imagesc(postPhasor.plotting.object.vector2,postPhasor.plotting.object.vector1,abs(postPhasor.object(:,:,round(end/2))));
             axis image;title('Amplitude, dimensions [1,2]');xlabel('Position [nm]');ylabel('Position [nm]');
-            set(gca,'FontSize',20);zoom(zoom_value);
+            set(gca,'FontSize',20);zoom(postPhasor.plotting.zoom_value(1));
 
             subplot(1,3,2);imagesc(postPhasor.plotting.object.vector3,postPhasor.plotting.object.vector1,squeeze(abs(postPhasor.object(:,round(end/2),:))));
             axis image;title('Amplitude, dimensions [1,3]');xlabel('Position [nm]');ylabel('Position [nm]');
-            set(gca,'FontSize',20);zoom(zoom_value);
+            set(gca,'FontSize',20);zoom(postPhasor.plotting.zoom_value(2));
 
             subplot(1,3,3);imagesc(postPhasor.plotting.object.vector3,postPhasor.plotting.object.vector2,squeeze(abs(postPhasor.object(round(end/2),:,:))));
             axis image;title('Amplitude, dimensions [2,3]');xlabel('Position [nm]');ylabel('Position [nm]');
             colormap bone
-            set(gca,'FontSize',20);zoom(zoom_value);
+            set(gca,'FontSize',20);zoom(postPhasor.plotting.zoom_value(3));
         end
         
-        function plot_phase_slice(postPhasor,zoom_value)            
+        function plot_phase_slice(postPhasor,zoom_value)  
+            
+            postPhasor.setZoom(zoom_value); % should be 3-element vector
+            
             % Phase central slices
             figure('Position',[100 100 2000 500]);
             subplot(1,3,1);imagesc(postPhasor.plotting.object.vector2,postPhasor.plotting.object.vector1,...
                 angle(postPhasor.object(:,:,round(end/2))).*postPhasor.mask(:,:,round(end/2)),'AlphaData',postPhasor.mask(:,:,round(end/2)));
             axis image;title('Phase');colorbar;xlabel('Position [nm]');ylabel('Position [nm]');
-            set(gca,'FontSize',20);zoom(zoom_value);
+            set(gca,'FontSize',20);zoom(postPhasor.plotting.zoom_value(1));
 
             subplot(1,3,2);imagesc(postPhasor.plotting.object.vector3,postPhasor.plotting.object.vector1,...
                 squeeze(angle(postPhasor.object(:,round(end/2),:))).*squeeze(postPhasor.mask(:,round(end/2),:)),'AlphaData',squeeze(postPhasor.mask(:,round(end/2),:)));
             axis image;title('Phase');colorbar;xlabel('Position [nm]');ylabel('Position [nm]');
-            set(gca,'FontSize',20);zoom(zoom_value);
+            set(gca,'FontSize',20);zoom(postPhasor.plotting.zoom_value(2));
 
             subplot(1,3,3);imagesc(postPhasor.plotting.object.vector3,postPhasor.plotting.object.vector2,...
                 squeeze(angle(postPhasor.object(round(end/2),:,:))).*squeeze(postPhasor.mask(round(end/2),:,:)),'AlphaData',squeeze(postPhasor.mask(round(end/2),:,:)));
             axis image;title('Phase');colorbar;xlabel('Position [nm]');ylabel('Position [nm]');
-            set(gca,'FontSize',20);zoom(zoom_value);
+            set(gca,'FontSize',20);zoom(postPhasor.plotting.zoom_value(3));
             colormap jet
         end
         
-        function plot_displacement_slice(postPhasor, zoom_value)            
+        function plot_displacement_slice(postPhasor, zoom_value) 
+            
+            postPhasor.setZoom(zoom_value); % should be 3-element vector
+            
             % Phase central slices
             figure('Position',[100 100 2000 500]);
             subplot(1,3,1);imagesc(postPhasor.plotting.object.vector2,postPhasor.plotting.object.vector1,(postPhasor.displacement(:,:,round(end/2))).*postPhasor.mask(:,:,round(end/2)),'AlphaData',postPhasor.mask(:,:,round(end/2)));
             axis image;title('Displacement');colorbar;xlabel('Position [nm]');ylabel('Position [nm]');
-            set(gca,'FontSize',20);zoom(zoom_value);
+            set(gca,'FontSize',20);zoom(postPhasor.plotting.zoom_value(1));
             
             subplot(1,3,2);imagesc(postPhasor.plotting.object.vector3,postPhasor.plotting.object.vector1,squeeze((postPhasor.displacement(:,round(end/2),:))).*squeeze(postPhasor.mask(:,round(end/2),:)),'AlphaData',squeeze(postPhasor.mask(:,round(end/2),:)));
             axis image;title('Displacement');colorbar;xlabel('Position [nm]');ylabel('Position [nm]');
-            set(gca,'FontSize',20);zoom(zoom_value);
+            set(gca,'FontSize',20);zoom(postPhasor.plotting.zoom_value(2));
             
             subplot(1,3,3);imagesc(postPhasor.plotting.object.vector3,postPhasor.plotting.object.vector2,squeeze((postPhasor.displacement(round(end/2),:,:))).*squeeze(postPhasor.mask(round(end/2),:,:)),'AlphaData',squeeze(postPhasor.mask(round(end/2),:,:)));
             axis image;title('Displacement');colorbar;xlabel('Position [nm]');ylabel('Position [nm]');
             colormap jet
-            set(gca,'FontSize',20);zoom(zoom_value);
+            set(gca,'FontSize',20);zoom(postPhasor.plotting.zoom_value(3));
         end
         
         function plot_strain_slice(postPhasor,zoom_value,slice)
+            
+            postPhasor.setZoom(zoom_value); % should be 3-element vector
+            
             if nargin == 2
                 try
                     figure('Position',[100 100 2000 500]);
@@ -960,7 +984,7 @@ classdef PostPhasor < handle
                             postPhasor.strain(:,:,round(end/2)).*postPhasor.strain_mask(:,:,round(end/2)),...
                             'AlphaData',postPhasor.strain_mask(:,:,round(end/2)));                    
                     axis image;colorbar;colorbar;title('Strain');xlabel('Position [nm]');ylabel('Position [nm]');
-                    set(gca,'FontSize',20);zoom(zoom_value);
+                    set(gca,'FontSize',20);zoom(postPhasor.plotting.zoom_value(1));
 
                     subplot(1,3,2);
                     imagesc(postPhasor.plotting.strain.vector3,...
@@ -968,7 +992,7 @@ classdef PostPhasor < handle
                             squeeze(postPhasor.strain(:,round(end/2),:)).*squeeze(postPhasor.strain_mask(:,round(end/2),:)),...
                             'AlphaData',squeeze(postPhasor.strain_mask(:,round(end/2),:)));
                     axis image;colorbar;colorbar;title('Strain');xlabel('Position [nm]');ylabel('Position [nm]');
-                    set(gca,'FontSize',20);zoom(zoom_value);
+                    set(gca,'FontSize',20);zoom(postPhasor.plotting.zoom_value(2));
 
                     subplot(1,3,3);
                     imagesc(postPhasor.plotting.strain.vector3,...
@@ -976,7 +1000,7 @@ classdef PostPhasor < handle
                             squeeze(postPhasor.strain(round(end/2),:,:)).*squeeze(postPhasor.strain_mask(round(end/2),:,:)),...
                             'AlphaData',squeeze(postPhasor.strain_mask(round(end/2),:,:)));
                     axis image;colorbar;colorbar;title('Strain');xlabel('Position [nm]');ylabel('Position [nm]');
-                    set(gca,'FontSize',20);zoom(zoom_value);
+                    set(gca,'FontSize',20);zoom(postPhasor.plotting.zoom_value(3));
                     colormap jet
                 catch
                     error('No strain found!')
@@ -990,7 +1014,7 @@ classdef PostPhasor < handle
                             postPhasor.strain(:,:,slice(3)).*postPhasor.strain_mask(:,:,slice(3)),...
                             'AlphaData',postPhasor.strain_mask(:,:,slice(3)));                    
                     axis image;colorbar;colorbar;title('Strain');xlabel('Position [nm]');ylabel('Position [nm]');
-                    set(gca,'FontSize',20);zoom(zoom_value);
+                    set(gca,'FontSize',20);zoom(postPhasor.plotting.zoom_value(1));
 
                     subplot(1,3,2);
                     imagesc(postPhasor.plotting.strain.vector3,...
@@ -998,7 +1022,7 @@ classdef PostPhasor < handle
                             squeeze(postPhasor.strain(:,slice(2),:)).*squeeze(postPhasor.strain_mask(:,slice(2),:)),...
                             'AlphaData',squeeze(postPhasor.strain_mask(:,slice(2),:)));
                     axis image;colorbar;colorbar;title('Strain');xlabel('Position [nm]');ylabel('Position [nm]');
-                    set(gca,'FontSize',20);zoom(zoom_value);
+                    set(gca,'FontSize',20);zoom(postPhasor.plotting.zoom_value(2));
 
                     subplot(1,3,3);
                     imagesc(postPhasor.plotting.strain.vector3,...
@@ -1006,7 +1030,7 @@ classdef PostPhasor < handle
                             squeeze(postPhasor.strain(slice(1),:,:)).*squeeze(postPhasor.strain_mask(slice(1),:,:)),...
                             'AlphaData',squeeze(postPhasor.strain_mask(slice(1),:,:)));
                     axis image;colorbar;colorbar;title('Strain');xlabel('Position [nm]');ylabel('Position [nm]');
-                    set(gca,'FontSize',20);zoom(zoom_value);
+                    set(gca,'FontSize',20);zoom(postPhasor.plotting.zoom_value(3));
                     colormap jet
                 catch
                     error('No strain found!')
@@ -1113,6 +1137,7 @@ classdef PostPhasor < handle
                 title('Strain profile');grid on;xlabel('Position [nm]');    
             end            
         end
+        
         % Save functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % save the current instance of the object
         function save_instance(postPhasor)

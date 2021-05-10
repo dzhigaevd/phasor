@@ -69,13 +69,13 @@ O.lambda = postPhasor.experiment.wavelength;
 O.p_sam = 1; % obtained from reconstruction, set to 1 if unknown
 
 % beamline sample motor angles in degrees (set to the motors' default angles for lab space)
-% O.theta_bl = 0; % for lab space
-% O.chi_bl = 90; % for lab space
-% O.phi_bl = 0; % for lab space
+O.theta_bl = 0; % for lab space
+O.chi_bl = 90; % for lab space
+O.phi_bl = 0; % for lab space
  
-O.theta_bl = postPhasor.experiment.theta; % for lab space
-O.chi_bl   = postPhasor.experiment.chi; % for lab space
-O.phi_bl   = postPhasor.experiment.phi; % for lab space
+% O.theta_bl = postPhasor.experiment.theta; 
+% O.chi_bl   = postPhasor.experiment.chi; 
+% O.phi_bl   = postPhasor.experiment.phi; 
 
 % beamline detector motor angles in degrees
 O.delta_bl = postPhasor.experiment.delta;
@@ -151,7 +151,8 @@ fprintf('\n...making pixel grids...');
 
 % calculating original voxel size if unknown
 if O.p_sam == 1
-    O.p_sam = [O.lambda*O.D/(O.N(1)*O.d),O.lambda*O.D/(O.N(2)*O.d),O.lambda/(O.N(3)*(O.rocking_increment*pi/180))]; % this is just for detector plane
+%     O.p_sam = [O.lambda*O.D/(O.N(1)*O.d),O.lambda*O.D/(O.N(2)*O.d),abs(O.lambda/(O.N(3)*(O.rocking_increment*pi/180)))]; % this is just for detector plane
+    O.p_sam = [O.lambda*O.D/(O.N(1)*O.d),O.lambda*O.D/(O.N(2)*O.d),O.lambda*O.D/(O.N(2)*O.d)]; % this is just for detector plane
 end
 
 postPhasor.object_sampling = O.p_sam;
@@ -179,8 +180,8 @@ O.q_3p = O.R_dqp_3*O.Q_lab-O.Q_lab;
 % O.p_sam = 1;
 
 % make x', y', and z' detector conjugated space basis vectors, adapted from Berenguer et al. PRB 88, 144101 (2013).
-% O.V_DRS = dot(cross(O.q_3p, O.q_2p), O.q_1p)*O.N1*O.p_sam(1)*O.N2*O.p_sam(2)*O.N3*O.p_sam(3);
-O.V_DRS = dot(cross(O.q_1p, O.q_2p), O.q_3p)*O.N1*O.p_sam(1)*O.N2*O.p_sam(2)*O.N3*O.p_sam(3);
+O.V_DRS = dot(cross(O.q_3p, O.q_2p), O.q_1p)*O.N1*O.p_sam(1)*O.N2*O.p_sam(2)*O.N3*O.p_sam(3);
+% O.V_DRS = dot(cross(O.q_1p, O.q_2p), O.q_3p)*O.N1*O.p_sam(1)*O.N2*O.p_sam(2)*O.N3*O.p_sam(3);
 
 O.xp = 2*pi*cross(O.N2*O.p_sam(2)*O.q_2p, O.N3*O.p_sam(3)*O.q_3p)./O.V_DRS;
 O.yp = 2*pi*cross(O.N3*O.p_sam(3)*O.q_3p, O.N1*O.p_sam(1)*O.q_1p)./O.V_DRS;
@@ -196,6 +197,9 @@ O.T_DCS_to_SS = [O.xp, O.yp, O.zp]\[O.x_sam, O.y_sam, O.z_sam]; % equivalent to 
 O.N1gridp = O.T_DCS_to_SS(1,1)*O.N1grid + O.T_DCS_to_SS(1,2)*O.N2grid + O.T_DCS_to_SS(1,3)*O.N3grid;
 O.N2gridp = O.T_DCS_to_SS(2,1)*O.N1grid + O.T_DCS_to_SS(2,2)*O.N2grid + O.T_DCS_to_SS(2,3)*O.N3grid;
 O.N3gridp = O.T_DCS_to_SS(3,1)*O.N1grid + O.T_DCS_to_SS(3,2)*O.N2grid + O.T_DCS_to_SS(3,3)*O.N3grid;
+
+% TEST
+% O.DCS_shape_REC = flipdim(O.DCS_shape_REC,3);
 
 % interpolate original reflection data in the detector conjugated frame to sample space frame
 O.SS_shape_CALC = interp3(O.N1grid, O.N2grid, O.N3grid, O.DCS_shape_REC, O.N1gridp, O.N2gridp, O.N3gridp, 'linear', 0); % make any values outside original data zero.
@@ -215,6 +219,7 @@ O.SS_shape_CALC = circshift(O.SS_shape_CALC, size(O.SS_shape_CALC)/2-O.SS_shape_
 
 % Output for phasor
 postPhasor.object = O.SS_shape_CALC;
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Saving new reflection shape (DO NOT TOUCH)
 if save_reflection == 1
