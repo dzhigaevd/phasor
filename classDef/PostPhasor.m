@@ -357,6 +357,11 @@ classdef PostPhasor < handle
             postPhasor.update_plotting_vectors;
         end
         
+%         function [averageStrainBulk, averageStrainShell] = calculateAverageStrainInSegments(postPhasor)
+%             averageStrainBulk = mean(postPhasor.strain(:).*postPhasor.strain_mask_bulk(:));
+%             averageStrainShell = mean(postPhasor.strain(:).*postPhasor.strain_mask_shell(:));
+%         end
+            
         function calculate_strain_unwrap(postPhasor, strain_axis)
             %jclark
             %unwrap based on diff and cumsum
@@ -709,6 +714,7 @@ classdef PostPhasor < handle
         function calculate_resolution(postPhasor)
             % [IN DEVELOPMENT]
         end
+        
         % Visualization %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         function plot_prtf(postPhasor)
             figure;
@@ -1038,6 +1044,67 @@ classdef PostPhasor < handle
                     error('No strain found!')
                 end
             end
+        end
+        
+        function plotStrainSegmentsSlice(postPhasor,zoom_value)
+           postPhasor.setZoom(zoom_value); % should be 3-element vector        
+                try
+                    % Core
+                    figure('Position',[100 100 2000 500]);
+                    subplot(1,3,1);
+                    imagesc(postPhasor.plotting.strain.vector2,...
+                            postPhasor.plotting.strain.vector1(2:end),...
+                            postPhasor.strain(:,:,round(end/2)).*postPhasor.strain_mask_bulk(:,:,round(end/2)),...
+                            'AlphaData',postPhasor.strain_mask(:,:,round(end/2)));                    
+                    axis image;colorbar;colorbar;title('Strain: bulk');xlabel('Position [nm]');ylabel('Position [nm]');
+                    set(gca,'FontSize',20);zoom(postPhasor.plotting.zoom_value(1));
+
+                    subplot(1,3,2);
+                    imagesc(postPhasor.plotting.strain.vector3,...
+                            postPhasor.plotting.strain.vector1(2:end),...
+                            squeeze(postPhasor.strain(:,round(end/2),:)).*squeeze(postPhasor.strain_mask_bulk(:,round(end/2),:)),...
+                            'AlphaData',squeeze(postPhasor.strain_mask(:,round(end/2),:)));
+                    axis image;colorbar;colorbar;title('Strain: bulk');xlabel('Position [nm]');ylabel('Position [nm]');
+                    set(gca,'FontSize',20);zoom(postPhasor.plotting.zoom_value(2));
+
+                    subplot(1,3,3);
+                    imagesc(postPhasor.plotting.strain.vector3,...
+                            postPhasor.plotting.strain.vector2,...
+                            squeeze(postPhasor.strain(round(end/2),:,:)).*squeeze(postPhasor.strain_mask_bulk(round(end/2),:,:)),...
+                            'AlphaData',squeeze(postPhasor.strain_mask(round(end/2),:,:)));
+                    axis image;colorbar;colorbar;title('Strain: bulk');xlabel('Position [nm]');ylabel('Position [nm]');
+                    set(gca,'FontSize',20);zoom(postPhasor.plotting.zoom_value(3));
+                    colormap jet
+                    
+                    % Shell
+                    figure('Position',[100 100 2000 500]);
+                    subplot(1,3,1);
+                    imagesc(postPhasor.plotting.strain.vector2,...
+                            postPhasor.plotting.strain.vector1(2:end),...
+                            postPhasor.strain(:,:,round(end/2)).*postPhasor.strain_mask_shell(:,:,round(end/2)),...
+                            'AlphaData',postPhasor.strain_mask(:,:,round(end/2)));                    
+                    axis image;colorbar;colorbar;title('Strain: shell');xlabel('Position [nm]');ylabel('Position [nm]');
+                    set(gca,'FontSize',20);zoom(postPhasor.plotting.zoom_value(1));
+
+                    subplot(1,3,2);
+                    imagesc(postPhasor.plotting.strain.vector3,...
+                            postPhasor.plotting.strain.vector1(2:end),...
+                            squeeze(postPhasor.strain(:,round(end/2),:)).*squeeze(postPhasor.strain_mask_shell(:,round(end/2),:)),...
+                            'AlphaData',squeeze(postPhasor.strain_mask(:,round(end/2),:)));
+                    axis image;colorbar;colorbar;title('Strain: shell');xlabel('Position [nm]');ylabel('Position [nm]');
+                    set(gca,'FontSize',20);zoom(postPhasor.plotting.zoom_value(2));
+
+                    subplot(1,3,3);
+                    imagesc(postPhasor.plotting.strain.vector3,...
+                            postPhasor.plotting.strain.vector2,...
+                            squeeze(postPhasor.strain(round(end/2),:,:)).*squeeze(postPhasor.strain_mask_shell(round(end/2),:,:)),...
+                            'AlphaData',squeeze(postPhasor.strain_mask(round(end/2),:,:)));
+                    axis image;colorbar;colorbar;title('Strain: shell');xlabel('Position [nm]');ylabel('Position [nm]');
+                    set(gca,'FontSize',20);zoom(postPhasor.plotting.zoom_value(3));
+                    colormap jet
+                catch
+                    error('No strain or core-shell mask found!')
+                end    
         end
         
         function plot_central_profiles(postPhasor,volume)
