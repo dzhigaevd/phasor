@@ -57,10 +57,17 @@ classdef PostPhasor < handle
             try
                 postPhasor.object_sampling = input_param.object_sampling;
                 postPhasor.update_plotting_vectors;
-            catch
+            catch                
                 error('No real-space sampling defined!');
             end
-                                    
+                
+            try
+                postPhasor.plotting.binning = input_param.binning;
+                postPhasor.update_plotting_vectors;
+            catch
+                postPhasor.plotting.binning = [1,1];
+                warning('No binning defined! Using [1,1]');
+            end
             disp('PostPhasor instance created succesfully');
         end
     end  
@@ -256,7 +263,7 @@ classdef PostPhasor < handle
         
         function rotateObject(postPhasor,rotationAngles)
             try
-                [x, y, z] = meshgrid(postPhasor.plotting.object.vector1,postPhasor.plotting.object.vector2,postPhasor.plotting.object.vector3);                       
+                [x, y, z] = meshgrid(postPhasor.plotting.object.vector2,postPhasor.plotting.object.vector1,postPhasor.plotting.object.vector3);                       
 
                 U = rotxd(rotationAngles(1))*rotyd(rotationAngles(2))*rotzd(rotationAngles(3));
 
@@ -293,12 +300,17 @@ classdef PostPhasor < handle
         end
         
         function transform2lab(postPhasor)
-            switch postPhasor.experiment.beamline
-                case '34idc'
-                    DCS_to_SS;
-                case 'nanomax'
-                    DCS_to_SS_MAXIV_NanoMAX;                  
-            end                                   
+%             switch postPhasor.experiment.beamline
+                % Unified coordinate transformation
+                DCS_to_SS;
+                
+%                 case '34idc'
+%                     DCS_to_SS;
+%                 case 'nanomax'
+%                     DCS_to_SS_MAXIV_NanoMAX;    
+%                 case 'p10'
+%                     DCS_to_SS_P10;
+%             end                                   
             postPhasor.update_plotting_vectors;
         end
         
@@ -836,7 +848,7 @@ classdef PostPhasor < handle
             function drawIsosurface(input,isoVal,cmap)
                 cla(ax);
                 axes(ax);
-                isosurface(postPhasor.plotting.object.vector1,postPhasor.plotting.object.vector2,postPhasor.plotting.object.vector3,abs(input),isoVal,angle(input));
+                isosurface(postPhasor.plotting.object.vector2,postPhasor.plotting.object.vector1,postPhasor.plotting.object.vector3,abs(input),isoVal,angle(input));
                 
                 xlabel('x, [nm]'); ylabel('y, [nm]'); zlabel('z, [nm]'); 
                 
@@ -1308,4 +1320,3 @@ classdef PostPhasor < handle
                 
     end
 end
-
