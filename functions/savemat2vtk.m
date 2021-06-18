@@ -26,7 +26,7 @@ function savemat2vtk(filename,array,spacing,array2)
     fprintf(fid, '\n');
     fprintf(fid, 'ORIGIN    0.000   0.000   0.000\n');
     %fprintf(fid, 'SPACING    1.000   1.000   1.000\n');
-    fprintf(fid, 'SPACING    %d   %d   %d\n',spacing,spacing,spacing);
+    fprintf(fid, 'SPACING    %d   %d   %d\n',spacing(2),spacing(1),spacing(3));
     fprintf(fid, '\n');
     fprintf(fid, 'POINT_DATA   %d\n', nx*ny*nz);
     fprintf(fid, 'SCALARS amp double\n');
