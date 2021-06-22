@@ -152,7 +152,12 @@ classdef PostPhasor < handle
                         postPhasor.strain = flip(postPhasor.strain);
                         postPhasor.strain_mask = flip(postPhasor.strain_mask);
                         fprintf('Strain is flipped along dimension %d\n',dimension);
-                    end                    
+                    end
+                    if ~isempty(postPhasor.displacement)
+                        postPhasor.displacement = flip(postPhasor.strain);
+                        postPhasor.strain_mask = flip(postPhasor.strain_mask);
+                        fprintf('Strain is flipped along dimension %d\n',dimension);
+                    end
                 else
                     postPhasor.object = flip(postPhasor.object);
                     postPhasor.mask = flip(postPhasor.mask);
@@ -165,8 +170,9 @@ classdef PostPhasor < handle
                 end
             catch
                 error('Object can not be flipped along selected dimension');
-            end                                        
-        end
+            end
+            
+        end             
         
         function crop_manual(postPhasor)  
             
@@ -174,13 +180,49 @@ classdef PostPhasor < handle
             imagesc(squeeze(sum(abs(postPhasor.object),3)));
             hIm = imrect;
             pos = round(getPosition(hIm)); %[xmin ymin width height]                        
-
+            
+            maskFlag = 0;
+            strainFlag = 0;
+            dispFlag = 0;
+            
             for ii = 1:size(postPhasor.object,3)      
-                temp.object(:,:,ii) = squeeze(postPhasor.object(pos(2):pos(2)+pos(4),pos(1):pos(1)+pos(3),ii));   
-                temp.mask(:,:,ii) = squeeze(postPhasor.mask(pos(2):pos(2)+pos(4),pos(1):pos(1)+pos(3),ii));   
+                temp.object(:,:,ii) = squeeze(postPhasor.object(pos(2):pos(2)+pos(4),pos(1):pos(1)+pos(3),ii)); 
+                try
+                    temp.mask(:,:,ii) = squeeze(postPhasor.mask(pos(2):pos(2)+pos(4),pos(1):pos(1)+pos(3),ii));
+                    maskFlag = 1;
+                catch
+                    maskFlag = 0;
+                end
+
+                try
+                    temp.strain(:,:,ii) = squeeze(postPhasor.strain(pos(2):pos(2)+pos(4),pos(1):pos(1)+pos(3),ii));
+                    strainFlag = 1;
+                catch
+                    strainFlag = 0;
+                end
+
+                try
+                    temp.displacement(:,:,ii) = squeeze(postPhasor.displacement(pos(2):pos(2)+pos(4),pos(1):pos(1)+pos(3),ii));
+                    dispFlag = 1;
+                catch
+                    dispFlag = 0;
+                end
             end
+            
             postPhasor.object = temp.object;
-            postPhasor.mask = temp.mask;
+            
+            if maskFlag            
+                postPhasor.mask = temp.mask;
+            end
+            
+            if strainFlag
+                postPhasor.strain = temp.strain;
+            end
+            
+            if dispFlag
+                postPhasor.displacement = temp.displacement;
+            end
+            
             clear temp
             close;
            
@@ -190,11 +232,36 @@ classdef PostPhasor < handle
             pos = round(getPosition(hIm)); %[xmin ymin width height]                        
 
             for ii = 1:size(postPhasor.object,2)      
-                temp.object(:,ii,:) = squeeze(postPhasor.object(pos(2):pos(2)+pos(4),ii,pos(1):pos(1)+pos(3)));   
-                temp.mask(:,ii,:) = squeeze(postPhasor.mask(pos(2):pos(2)+pos(4),ii,pos(1):pos(1)+pos(3)));   
+                temp.object(:,ii,:) = squeeze(postPhasor.object(pos(2):pos(2)+pos(4),ii,pos(1):pos(1)+pos(3)));
+                try
+                    temp.mask(:,ii,:) = squeeze(postPhasor.mask(pos(2):pos(2)+pos(4),ii,pos(1):pos(1)+pos(3)));   
+                catch
+                end
+                
+                try
+                    temp.strain(:,ii,:) = squeeze(postPhasor.strain(pos(2):pos(2)+pos(4),ii,pos(1):pos(1)+pos(3)));
+                catch                    
+                end
+
+                try
+                    temp.displacement(:,ii,:) = squeeze(postPhasor.displacement(pos(2):pos(2)+pos(4),ii,pos(1):pos(1)+pos(3)));
+                catch                    
+                end
             end
+            
             postPhasor.object = temp.object;
-            postPhasor.mask = temp.mask;
+            if maskFlag            
+                postPhasor.mask = temp.mask;
+            end
+            
+            if strainFlag
+                postPhasor.strain = temp.strain;
+            end
+            
+            if dispFlag
+                postPhasor.displacement = temp.displacement;
+            end
+            
             clear temp
             close;
             
@@ -1124,6 +1191,78 @@ classdef PostPhasor < handle
                 postPhasor.plotting.zoom_value = zoom_value;
                 fprintf('+ Zoom values are set to: [%.2f, %.2f, %.2f]!\n',postPhasor.plotting.zoom_value(1),postPhasor.plotting.zoom_value(2),postPhasor.plotting.zoom_value(3));                
             end
+        end
+        
+        function plot_alpha_slice(postPhasor,zoom_value,type)
+            if nargin == 1
+                zoom_value = [1,1,1];
+                type = 'amp-disp';
+            elseif nargin == 2
+                type = 'amp-disp';
+            end
+            
+            postPhasor.setZoom(zoom_value); % should be 3-element vector
+            
+            switch type
+                case 'amp-disp'
+                    plotLabel = 'amplitude+displacement ';
+                    
+                    dataImg = postPhasor.mask(:,:,round(end/2)).*postPhasor.displacement(:,:,round(end/2));
+                    alphaM = abs(postPhasor.mask(:,:,round(end/2)).*postPhasor.object(:,:,round(end/2)))./max(max(abs(postPhasor.mask(:,:,round(end/2)).*postPhasor.object(:,:,round(end/2)))));
+                    
+                    figure('Position',[100 100 2000 500]);
+                    subplot(1,3,1);imagesc(postPhasor.plotting.object.vector2,postPhasor.plotting.object.vector1,dataImg,'AlphaData',alphaM);                    
+                    axis image;title(sprintf('%s [1,2]',plotLabel));xlabel('Position [nm]');ylabel('Position [nm]');
+                    set(gca,'FontSize',20);zoom(postPhasor.plotting.zoom_value(1));
+                    colorbar;
+                    
+                    dataImg = squeeze(postPhasor.mask(:,round(end/2),:).*postPhasor.displacement(:,round(end/2),:));
+                    alphaM = squeeze(abs(postPhasor.mask(:,round(end/2),:).*postPhasor.object(:,round(end/2),:))./max(max(abs(postPhasor.mask(:,round(end/2),:).*postPhasor.object(:,round(end/2),:)))));
+                    
+                    subplot(1,3,2);imagesc(postPhasor.plotting.object.vector3,postPhasor.plotting.object.vector1,dataImg,'AlphaData',alphaM);
+                    axis image;title(sprintf('%s [1,3]',plotLabel));xlabel('Position [nm]');ylabel('Position [nm]');
+                    set(gca,'FontSize',20);zoom(postPhasor.plotting.zoom_value(2));
+                    colorbar;
+                    
+                    dataImg = squeeze(postPhasor.mask(round(end/2),:,:).*postPhasor.displacement(round(end/2),:,:));
+                    alphaM = squeeze(abs(postPhasor.mask(round(end/2),:,:).*postPhasor.object(round(end/2),:,:))./max(max(abs(postPhasor.mask(round(end/2),:,:).*postPhasor.object(round(end/2),:,:)))));
+                    
+                    subplot(1,3,3);imagesc(postPhasor.plotting.object.vector3,postPhasor.plotting.object.vector2,dataImg,'AlphaData',alphaM);
+                    axis image;title(sprintf('%s [2,3]',plotLabel));xlabel('Position [nm]');ylabel('Position [nm]');
+                    set(gca,'FontSize',20);zoom(postPhasor.plotting.zoom_value(3));
+                    colorbar;
+                    
+                    colormap jet     
+                case 'amp-strain'
+                    plotLabel = 'amplitude+strain ';
+                    
+                    dataImg = postPhasor.mask(:,:,round(end/2)).*postPhasor.strain(:,:,round(end/2));
+                    alphaM = abs(postPhasor.mask(:,:,round(end/2)).*postPhasor.object(:,:,round(end/2)))./max(max(abs(postPhasor.mask(:,:,round(end/2)).*postPhasor.object(:,:,round(end/2)))));
+                    
+                    figure('Position',[100 100 2000 500]);
+                    subplot(1,3,1);imagesc(postPhasor.plotting.object.vector2,postPhasor.plotting.object.vector1,dataImg,'AlphaData',alphaM);                    
+                    axis image;title(sprintf('%s [1,2]',plotLabel));xlabel('Position [nm]');ylabel('Position [nm]');
+                    set(gca,'FontSize',20);zoom(postPhasor.plotting.zoom_value(1));
+                    colorbar;
+                    
+                    dataImg = squeeze(postPhasor.mask(:,round(end/2),:).*postPhasor.strain(:,round(end/2),:));
+                    alphaM = squeeze(abs(postPhasor.mask(:,round(end/2),:).*postPhasor.object(:,round(end/2),:))./max(max(abs(postPhasor.mask(:,round(end/2),:).*postPhasor.object(:,round(end/2),:)))));
+                    
+                    subplot(1,3,2);imagesc(postPhasor.plotting.object.vector3,postPhasor.plotting.object.vector1,dataImg,'AlphaData',alphaM);
+                    axis image;title(sprintf('%s [1,3]',plotLabel));xlabel('Position [nm]');ylabel('Position [nm]');
+                    set(gca,'FontSize',20);zoom(postPhasor.plotting.zoom_value(2));
+                    colorbar;
+                    
+                    dataImg = squeeze(postPhasor.mask(round(end/2),:,:).*postPhasor.strain(round(end/2),:,:));
+                    alphaM = squeeze(abs(postPhasor.mask(round(end/2),:,:).*postPhasor.object(round(end/2),:,:))./max(max(abs(postPhasor.mask(round(end/2),:,:).*postPhasor.object(round(end/2),:,:)))));
+                    
+                    subplot(1,3,3);imagesc(postPhasor.plotting.object.vector3,postPhasor.plotting.object.vector2,dataImg,'AlphaData',alphaM);
+                    axis image;title(sprintf('%s [2,3]',plotLabel));xlabel('Position [nm]');ylabel('Position [nm]');
+                    set(gca,'FontSize',20);zoom(postPhasor.plotting.zoom_value(3));
+                    colorbar;
+                    
+                    colormap jet     
+            end            
         end
         
         function plot_amplitude_slice(postPhasor,zoom_value)            
