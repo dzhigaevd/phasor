@@ -387,13 +387,10 @@ classdef PostPhasor < handle
             postPhasor.update_plotting_vectors;
         end
         
-        function transform2lab_lab(postPhasor,qVectorAlign)
+        function transform2lab_lab(postPhasor)
             %change sign of the phase to have a correct displacement field
 %             postPhasor.object = abs(postPhasor.object).*exp(-1j.*angle(postPhasor.object));
-            % Unified coordinate transformation
-            if nargin == 1
-                qVectorAlign = 0;
-            end
+            % Unified coordinate transformation           
             
             DCS_to_SS_LAB; 
             postPhasor.update_plotting_vectors;
@@ -414,10 +411,7 @@ classdef PostPhasor < handle
             postPhasor.object = fftshift(ifftn(ifftshift(conj(F))));
         end                
         
-        function calculate_qVectorLab(postPhasor,sampleFlag)
-            if nargin == 1
-                sampleFlag = 0;
-            end
+        function calculate_qVectorLab(postPhasor)
             % Modulus of the incidence wave-vector
             k_mod = (2*pi)/postPhasor.experiment.wavelength;
             
@@ -431,40 +425,33 @@ classdef PostPhasor < handle
                         % The direction of the scattered beam in the lab frame
                         % the + sign before the sind (2nd element) of the
                         % matrix is there due to the rotation direction of
-                        % the detector arm                        
-                        if sampleFlag 
-                           
-                        else
-                            postPhasor.experiment.k_s = [sind(postPhasor.experiment.delta)*cosd(postPhasor.experiment.gamma)*k_mod;...
-                            sind(postPhasor.experiment.gamma)*k_mod;...
-                            cosd(postPhasor.experiment.delta)*cosd(postPhasor.experiment.gamma)*k_mod];
+                        % the detector arm                                              
+                        postPhasor.experiment.k_s = [sind(postPhasor.experiment.delta+postPhasor.experiment.shift_delta)*cosd(postPhasor.experiment.gamma+postPhasor.experiment.shift_gamma);...
+                        sind(postPhasor.experiment.gamma+postPhasor.experiment.shift_gamma);...
+                        cosd(postPhasor.experiment.delta+postPhasor.experiment.shift_delta)*cosd(postPhasor.experiment.gamma+postPhasor.experiment.shift_gamma)].*k_mod;
 
-                            % The direction of the wave transfer in the lab frame
-                            postPhasor.experiment.qVectorLab = postPhasor.experiment.k_s-postPhasor.experiment.k_i;
+                        % The direction of the wave transfer in the lab frame
+                        postPhasor.experiment.qVectorLab = postPhasor.experiment.k_s-postPhasor.experiment.k_i;
 
-                            twoTheta = acosd(dot(postPhasor.experiment.k_i,postPhasor.experiment.k_s)/(norm(postPhasor.experiment.k_i)*norm(postPhasor.experiment.k_s)));
-                            fprintf('2Theta is: %.3f\n',twoTheta);
-                            fprintf('|Q| is: %.3f\n',norm(postPhasor.experiment.qVectorLab)*1e-10);
-                            fprintf('d-spacing is: %.3f\n',2*pi/norm(postPhasor.experiment.qVectorLab)*1e10);
+                        disp('+ Calculated Q-vector in lab system of 34idc!');
 
-                            disp('+ Calculated Q-vector in lab system of 34idc!');
-                        end
                     catch
                         error('Can not calculate Q-vector in lab system for 34idc!');
                     end
                 case 'p10'
                     try
-                        postPhasor.experiment.k_s = [sind(postPhasor.experiment.gamma)*cosd(postPhasor.experiment.delta),...
-                        sind(postPhasor.experiment.delta),...
-                        cosd(postPhasor.experiment.gamma)*cosd(postPhasor.experiment.delta)].*k_mod;
+                        postPhasor.experiment.k_s = [sind(postPhasor.experiment.gamma+postPhasor.experiment.shift_gamma)*cosd(postPhasor.experiment.delta+postPhasor.experiment.shift_delta);...
+                        sind(postPhasor.experiment.delta+postPhasor.experiment.shift_delta);...
+                        cosd(postPhasor.experiment.gamma+postPhasor.experiment.shift_gamma)*cosd(postPhasor.experiment.delta+postPhasor.experiment.shift_delta)].*k_mod;
                         
-                        postPhasor.experiment.qVectorLab = [sind(postPhasor.experiment.gamma)*cosd(postPhasor.experiment.delta),...
-                        sind(postPhasor.experiment.delta),...
-                        cosd(postPhasor.experiment.gamma)*cosd(postPhasor.experiment.delta)-1.0].*k_mod;
+                    % The direction of the wave transfer in the lab frame
+                        postPhasor.experiment.qVectorLab = postPhasor.experiment.k_s-postPhasor.experiment.k_i;
+                        
                         disp('+ Calculated Q-vector in lab system of p10!');
                     catch
                         error('Can not calculate Q-vector in lab system for p10!');
                     end
+                    
                 case 'nanomax'
                     try
                         postPhasor.experiment.k_s = [sind(postPhasor.experiment.gamma)*cosd(postPhasor.experiment.delta),...
@@ -479,6 +466,11 @@ classdef PostPhasor < handle
                         error('Can not calculate Q-vector in lab system for nanomax!');
                     end                    
             end
+            
+            twoTheta = acosd(dot(postPhasor.experiment.k_i,postPhasor.experiment.k_s)/(norm(postPhasor.experiment.k_i)*norm(postPhasor.experiment.k_s)));
+            fprintf('2Theta is: %.3f\n',twoTheta);
+            fprintf('|Q| is: %.3f\n',norm(postPhasor.experiment.qVectorLab)*1e-10);
+            fprintf('d-spacing is: %.3f\n',2*pi/norm(postPhasor.experiment.qVectorLab)*1e10);
         end
         
         function calculate_volume(postPhasor)
@@ -486,7 +478,7 @@ classdef PostPhasor < handle
                 postPhasor.volume = sum(postPhasor.support(:))*prod(postPhasor.object_sampling.*1e9);
                 fprintf('The volume calculated from support: %f nm³\n', postPhasor.volume);
             else
-                threshold = 0.1;           
+                threshold = 0.3;           
                 v = abs(postPhasor.object) > threshold;
                 postPhasor.volume = sum(v(:))*prod(postPhasor.object_sampling.*1e9);
                 fprintf('The volume calculated from %.1f of amplitude: %f nm³\n', threshold, postPhasor.volume);
@@ -497,11 +489,12 @@ classdef PostPhasor < handle
         % displacment field: phase devided by modulus q
             try
                 postPhasor.displacement = -angle(postPhasor.object)/norm(postPhasor.experiment.qVectorLab); % displacment field
+                disp('+ Displacement field is calculated as negative phase, for MATLAB FFT')
             catch
                 postPhasor.calculate_qVectorLab;
                 postPhasor.calculate_displacement;
             end
-        end
+        end                
         
         function calculate_strainLab(postPhasor)
             try
@@ -1040,11 +1033,15 @@ classdef PostPhasor < handle
             text(q_vector(1)*(1+labelsShiftRatio), q_vector(2)*(1+labelsShiftRatio), q_vector(3)*(1+labelsShiftRatio), 'Q', 'Color', 'black', 'FontSize', 14);            
         end
         
-        function iso3dObject(postPhasor,cmap)
+        function iso3dObject(postPhasor,cmap,vectorsFlag)
             % Use an input parameter to show other complex valued matrix
             if nargin == 1
-                cmap = 'jet';                
-            end            
+                cmap = 'jet';    
+                vectorsFlag = 0;
+            elseif nargin == 2
+                vectorsFlag = 0;
+            end     
+            
             input = postPhasor.object./max(abs(postPhasor.object(:)));       
             handle = figure;            
             panel = uipanel('Parent',handle,'Title','Amp_Phase','FontSize',...
@@ -1078,7 +1075,10 @@ classdef PostPhasor < handle
                 h3 = light; h3.Position = [-1 -1 -1];  
                 h4 = light; h4.Position= [1 1 1];           
                 colormap(cmap);
-                overlayWaveVectors(postPhasor, ax)
+                
+                if vectorsFlag
+                    overlayWaveVectors(postPhasor, ax)
+                end
             end
             
             function slideIsosurfaceReal(hObj,callbackdata)
@@ -1087,11 +1087,14 @@ classdef PostPhasor < handle
             end  
         end
         
-        function iso3dStrainLab(postPhasor,cmap)
+        function iso3dStrainLab(postPhasor,cmap,vectorsFlag)
             % Use an input parameter to show other complex valued matrix
             if nargin == 1
-                cmap = 'jet';                
-            end            
+                cmap = 'jet';    
+                vectorsFlag = 0;
+            elseif nargin == 2
+                vectorsFlag = 0;
+            end      
             
             handle = figure;            
             panel = uipanel('Parent',handle,'Title','Strain lab','FontSize',...
@@ -1127,8 +1130,11 @@ classdef PostPhasor < handle
 %                 colorbar; 
                 h3 = light; h3.Position = [-1 -1 -1];  
                 h4 = light; h4.Position= [1 1 1];           
-                colormap(cmap);                  
-                overlayWaveVectors(postPhasor,ax);
+                colormap(cmap);              
+                
+                if vectorsFlag
+                    overlayWaveVectors(postPhasor,ax);
+                end
             end
             
             function slideIsosurfaceReal(hObj,callbackdata)
@@ -1562,7 +1568,6 @@ classdef PostPhasor < handle
             % Save the whole instance
             save_path = fullfile(postPhasor.pre_path, 'post_processing');
             mkdir(save_path);
-%             s = fullfile(save_path, sprintf('postPhasor_%s.mat',postPhasor.dataTime));
             s = fullfile(save_path, 'postPhasor.mat');
             save(s,'postPhasor');
             fprintf('+ postPhasor instance is saved to %s\n', s);
@@ -1630,18 +1635,26 @@ classdef PostPhasor < handle
         end
         
         function save_vtk(postPhasor)
-            save_path = fullfile(postPhasor.pre_path, 'post_processing');
+             save_path = fullfile(postPhasor.pre_path, 'post_processing');
             mkdir(save_path);
             
-            savemat2vtk(fullfile(save_path, 'object.vtk'),      postPhasor.object.*postPhasor.mask,     postPhasor.object_sampling);
+            savemat2vtk(fullfile(save_path, 'object.vtk'),      postPhasor.object.*postPhasor.mask,     postPhasor.object_sampling*1e9);
             try
-                savemat2vtk(fullfile(save_path, 'displacement.vtk'),postPhasor.mask,                        postPhasor.object_sampling,     postPhasor.displacement.*postPhasor.mask);
+                savemat2vtk(fullfile(save_path, 'displacement.vtk'), abs(postPhasor.object), postPhasor.object_sampling*1e9,     postPhasor.displacement.*postPhasor.mask);
             catch
             end
             try
-                savemat2vtk(fullfile(save_path, 'strain.vtk'),      postPhasor.strain_mask,           postPhasor.object_sampling,     postPhasor.strain.*postPhasor.strain_mask);
+                savemat2vtk(fullfile(save_path, 'strain.vtk'),      abs(postPhasor.object), postPhasor.object_sampling*1e9,     postPhasor.strain.*postPhasor.strain_mask);
             catch
             end
+            
+            try
+                scalingFactor = 0.2e-10*abs(postPhasor.plotting.object.vector1(1));                        
+                q_vector = postPhasor.experiment.qVectorLab.*scalingFactor;
+                saveVec2Vtk(fullfile(save_path, 'qVectorLab.vtk'),[0,0,0],q_vector);
+            catch
+            end
+            
             fprintf('+ VTK files are saved to %s\n', save_path);
         end
         
@@ -1659,7 +1672,25 @@ classdef PostPhasor < handle
             
             postPhasor.segment_strain_mask;
             postPhasor.calculate_strain_histogram('bulk');
+            
+            hFig = gcf;
+            set(hFig,'Units','Inches');
+            pos = get(hFig,'Position');
+            set(hFig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)]);
+            print(hFig,fullfile(save_path_figures,'histogram_bulk.pdf'),'-dpdf','-r0');
+            print(hFig,fullfile(save_path_figures,'histogram_bulk.png'),'-dpng','-r0');
+            savefig(hFig,fullfile(save_path_figures,'histogram_bulk.fig'));
+            close(hFig);
+            
             postPhasor.calculate_strain_histogram('shell');
+            hFig = gcf;
+            set(hFig,'Units','Inches');
+            pos = get(hFig,'Position');
+            set(hFig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)]);
+            print(hFig,fullfile(save_path_figures,'histogram_shell.pdf'),'-dpdf','-r0');
+            print(hFig,fullfile(save_path_figures,'histogram_shell.png'),'-dpng','-r0');
+            savefig(hFig,fullfile(save_path_figures,'histogram_shell.fig'));
+            close(hFig);
             
             fprintf('Saved everything to: %s\n',save_path);
         end
