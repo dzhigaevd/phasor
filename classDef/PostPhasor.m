@@ -1033,13 +1033,13 @@ classdef PostPhasor < handle
             text(q_vector(1)*(1+labelsShiftRatio), q_vector(2)*(1+labelsShiftRatio), q_vector(3)*(1+labelsShiftRatio), 'Q', 'Color', 'black', 'FontSize', 14);            
         end
         
-        function iso3dObject(postPhasor,cmap,vectorsFlag)
+        function iso3dObject(postPhasor,vectorsFlag,cmap)
             % Use an input parameter to show other complex valued matrix
             if nargin == 1
                 cmap = 'jet';    
                 vectorsFlag = 0;
             elseif nargin == 2
-                vectorsFlag = 0;
+                cmap = 'jet';                  
             end     
             
             input = postPhasor.object./max(abs(postPhasor.object(:)));       
@@ -1087,14 +1087,14 @@ classdef PostPhasor < handle
             end  
         end
         
-        function iso3dStrainLab(postPhasor,cmap,vectorsFlag)
+        function iso3dStrainLab(postPhasor,vectorsFlag,cmap)
             % Use an input parameter to show other complex valued matrix
             if nargin == 1
                 cmap = 'jet';    
                 vectorsFlag = 0;
             elseif nargin == 2
-                vectorsFlag = 0;
-            end      
+                cmap = 'jet';                  
+            end                  
             
             handle = figure;            
             panel = uipanel('Parent',handle,'Title','Strain lab','FontSize',...
