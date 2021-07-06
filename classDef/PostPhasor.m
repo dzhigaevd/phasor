@@ -396,6 +396,15 @@ classdef PostPhasor < handle
             postPhasor.update_plotting_vectors;
         end
         
+        function transform2sample(postPhasor)
+            %change sign of the phase to have a correct displacement field
+%             postPhasor.object = abs(postPhasor.object).*exp(-1j.*angle(postPhasor.object));
+            % Unified coordinate transformation           
+            
+            DCS_to_SS_LAB; 
+            postPhasor.update_plotting_vectors;
+        end
+        
         function add_pi(postPhasor)
             postPhasor.object = postPhasor.object.*exp(1j*pi);
             disp('+pi value is added to the phase of the object')
@@ -421,6 +430,8 @@ classdef PostPhasor < handle
             switch postPhasor.experiment.beamline
                 % Unified coordinate transformation
                 case '34idc'  
+                    % delta - positive rotation around vertical axis
+                    % gamma - negative rotation around horizontal axis
                     try        
                         % The direction of the scattered beam in the lab frame
                         % the + sign before the sind (2nd element) of the
@@ -439,6 +450,8 @@ classdef PostPhasor < handle
                         error('Can not calculate Q-vector in lab system for 34idc!');
                     end
                 case 'p10'
+                    % gamma - positive rotation around vertical axis
+                    % delta - negative rotation around horizontal axis
                     try
                         postPhasor.experiment.k_s = [sind(postPhasor.experiment.gamma+postPhasor.experiment.shift_gamma)*cosd(postPhasor.experiment.delta+postPhasor.experiment.shift_delta);...
                         sind(postPhasor.experiment.delta+postPhasor.experiment.shift_delta);...
@@ -453,14 +466,15 @@ classdef PostPhasor < handle
                     end
                     
                 case 'nanomax'
+                    % gamma - negative rotation around vertical axis
+                    % delta - negative rotation around horizontal axis
                     try
-                        postPhasor.experiment.k_s = [sind(postPhasor.experiment.gamma)*cosd(postPhasor.experiment.delta),...
-                        -sind(postPhasor.experiment.delta),...
-                        cosd(postPhasor.experiment.gamma)*cosd(postPhasor.experiment.delta)].*k_mod;
+                        postPhasor.experiment.k_s = [sind(-postPhasor.experiment.gamma+postPhasor.experiment.shift_gamma)*cosd(postPhasor.experiment.delta+postPhasor.experiment.shift_delta);...
+                        sind(postPhasor.experiment.delta+postPhasor.experiment.shift_delta);...
+                        cosd(-postPhasor.experiment.gamma+postPhasor.experiment.shift_gamma)*cosd(postPhasor.experiment.delta+postPhasor.experiment.shift_delta)].*k_mod;
+                    
+                        postPhasor.experiment.qVectorLab = postPhasor.experiment.k_s-postPhasor.experiment.k_i;
                         
-                        postPhasor.experiment.qVectorLab = [sind(postPhasor.experiment.gamma)*cosd(postPhasor.experiment.delta),...
-                        -sind(postPhasor.experiment.delta),...
-                        cosd(postPhasor.experiment.gamma)*cosd(postPhasor.experiment.delta)-1.0].*k_mod;
                         disp('+ Calculated Q-vector in lab system of nanomax!');
                     catch
                         error('Can not calculate Q-vector in lab system for nanomax!');
@@ -508,7 +522,6 @@ classdef PostPhasor < handle
 
                 % displacment field: phase devided by modulus q
                 postPhasor.calculate_displacement;
-%                 postPhasor.displacement = -angle(postPhasor.object)/Q_in_inv_m; % displacment field
 
                 % gradient of phase in x y z with spacing from interpolation
                 [e_x, e_y, e_z] = gradient(postPhasor.displacement, postPhasor.object_sampling(1),postPhasor.object_sampling(2),postPhasor.object_sampling(3)); %e_x: du/dx
@@ -524,6 +537,7 @@ classdef PostPhasor < handle
         end
         
         function calculate_strain(postPhasor, strain_axis)
+            warning('This is a depricated version of strain calculation, will be removed soon! Use calculate_strainLab!');
             H = 2*pi/postPhasor.experiment.d_spacing;
 
             postPhasor.displacement = angle(postPhasor.object)./H;
