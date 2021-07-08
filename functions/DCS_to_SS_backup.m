@@ -68,42 +68,56 @@ O.hkl = [1; 1; 1];
 O.lambda = postPhasor.experiment.wavelength;
 
 % get size of the original matrix
-[O.Nv, O.Nh, O.Nr] = size(O.DCS_shape_REC);
+[O.N1, O.N2, O.N3] = size(O.DCS_shape_REC);
 O.p_sam = 1; % obtained from reconstruction, set to 1 if unknown
 
 switch postPhasor.experiment.beamline
     % Unified coordinate transformation
-    % coordinate system : x-outborad (horizontal axis), y-up (vertical
-    % axis), z - along the incoming beam (bram axis)
     case '34idc'        
-        % beamline detector motor angles in degrees
-        O.detectorVerticalAxisRotation = postPhasor.experiment.delta;       
-        O.detectorHorizontalAxisRotation = postPhasor.experiment.gamma;
-        % Final orientation in the laboratory frame
         % beamline sample motor angles in degrees (set to the motors' default angles for lab space)
+%         O.theta_bl = 0; % for lab space
+%         O.sampleVerticalAxisRotation = 0;
+        O.sampleVerticalAxisRotation = postPhasor.experiment.theta;        
+%         O.chi_bl = 90; % for lab space
+%         O.sampleBeamAxisRotation = 90;
+        O.sampleBeamAxisRotation = postPhasor.experiment.chi;        
+
+%         O.sampleHorizontalAxisRotation = 0;
+        O.sampleHorizontalAxisRotation = postPhasor.experiment.phi;
         
-        O.sampleVerticalAxisRotation = 0;
-        O.sampleBeamAxisRotation = 90;
-        O.sampleHorizontalAxisRotation = 0;     
+        % For sample reference frame
+        % O.theta_bl = postPhasor.experiment.theta; 
+        % O.chi_bl   = postPhasor.experiment.chi; 
+        % O.phi_bl   = postPhasor.experiment.phi; 
+
+        % beamline detector motor angles in degrees
+%         O.delta_bl = postPhasor.experiment.delta;
+        O.detectorVerticalAxisRotation = postPhasor.experiment.delta;
+        
+%         O.gamma_bl = postPhasor.experiment.gamma;
+        O.detectorHorizontalAxisRotation = postPhasor.experiment.gamma;
+
     case 'nanomax'
-        % beamline detector motor angles in degrees
-        O.detectorVerticalAxisRotation = postPhasor.experiment.gamma;
-        O.detectorHorizontalAxisRotation = postPhasor.experiment.delta;
-
-        O.sampleVerticalAxisRotation = 0;
-        O.sampleBeamAxisRotation = 90;
-        O.sampleHorizontalAxisRotation = 0;
-        
-%         DCS_to_SS_MAXIV_NanoMAX;    
+        DCS_to_SS_MAXIV_NanoMAX;    
     case 'p10'
+        O.sampleVerticalAxisRotation = postPhasor.experiment.phi;        
+%         O.chi_bl = 90; % for lab space
+        O.sampleBeamAxisRotation = postPhasor.experiment.chi;        
+%         O.phi_bl = 0; % for lab space
+        O.sampleHorizontalAxisRotation = postPhasor.experiment.omega;
+        
+        % For sample reference frame
+%         O.theta_bl = postPhasor.experiment.theta; 
+%         O.chi_bl   = postPhasor.experiment.chi; 
+%         O.phi_bl   = postPhasor.experiment.phi; 
+
         % beamline detector motor angles in degrees
+%         O.delta_bl = postPhasor.experiment.delta;
         O.detectorVerticalAxisRotation = postPhasor.experiment.gamma;
+        
+%         O.gamma_bl = postPhasor.experiment.gamma;
         O.detectorHorizontalAxisRotation = postPhasor.experiment.delta;
-
-        O.sampleVerticalAxisRotation = 0;
-        O.sampleBeamAxisRotation = 90;
-        O.sampleHorizontalAxisRotation = 0;
-
+%         DCS_to_SS_P10;
 end                               
 
 % choose rocking angle and increment in degrees
@@ -135,7 +149,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 3. Plot options
 % plot the calculated DCS shape
-plot_shape = 0; % 1 to plot calculated DCS shape
+plot_shape = 1; % 1 to plot calculated DCS shape
 
 % toggle between viewing the thresholded amplitude or isosurface
 amplitudes = 0; % 1 to plot amplitudes, 0 to plot isosurfaces
@@ -182,7 +196,7 @@ O.file_name = 'Cylinder_(-120)_-36.0786_gamma_40.2954_delta_0.00274_dtheta-SAM';
 %% Making grids assuming 34-ID-C coordinate frame (DO NOT TOUCH)
 fprintf('\n...making pixel grids...');
 % make pixel coordinate grids for the 3D volume of the original DCS shape
-[O.Nvgrid, O.Nhgrid, O.Nrgrid] = meshgrid(-(O.Nh-1)/2:(O.Nh-1)/2, -(O.Nv-1)/2:(O.Nv-1)/2, -(O.Nr-1)/2:(O.Nr-1)/2);
+[O.N1grid, O.N2grid, O.N3grid] = meshgrid(-(O.N2-1)/2:(O.N2-1)/2, -(O.N1-1)/2:(O.N1-1)/2, -(O.N3-1)/2:(O.N3-1)/2);
 
 % calculating original voxel size if unknown
 if O.p_sam == 1
@@ -217,12 +231,12 @@ O.q_3p = O.R_dqp_3*O.Q_lab-O.Q_lab;
 % O.p_sam = 1;
 
 % make x', y', and z' detector conjugated space basis vectors, adapted from Berenguer et al. PRB 88, 144101 (2013).
-% O.V_DRS = dot(cross(O.q_3p, O.q_2p), O.q_1p)*O.Nv*O.p_sam(1)*O.Nh*O.p_sam(2)*O.Nr*O.p_sam(3);
-O.V_DRS = dot(cross(O.q_1p, O.q_2p), O.q_3p)*O.Nv*O.p_sam(1)*O.Nh*O.p_sam(2)*O.Nr*O.p_sam(3);
+O.V_DRS = dot(cross(O.q_3p, O.q_2p), O.q_1p)*O.N1*O.p_sam(1)*O.N2*O.p_sam(2)*O.N3*O.p_sam(3);
+% O.V_DRS = dot(cross(O.q_1p, O.q_2p), O.q_3p)*O.N1*O.p_sam(1)*O.N2*O.p_sam(2)*O.N3*O.p_sam(3);
 
-O.xp = 2*pi*cross(O.Nh*O.p_sam(2)*O.q_2p, O.Nr*O.p_sam(3)*O.q_3p)./O.V_DRS;
-O.yp = 2*pi*cross(O.Nr*O.p_sam(3)*O.q_3p, O.Nv*O.p_sam(1)*O.q_1p)./O.V_DRS;
-O.zp = 2*pi*cross(O.Nv*O.p_sam(1)*O.q_1p, O.Nh*O.p_sam(2)*O.q_2p)./O.V_DRS;
+O.xp = 2*pi*cross(O.N2*O.p_sam(2)*O.q_2p, O.N3*O.p_sam(3)*O.q_3p)./O.V_DRS;
+O.yp = 2*pi*cross(O.N3*O.p_sam(3)*O.q_3p, O.N1*O.p_sam(1)*O.q_1p)./O.V_DRS;
+O.zp = 2*pi*cross(O.N1*O.p_sam(1)*O.q_1p, O.N2*O.p_sam(2)*O.q_2p)./O.V_DRS;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Map from original DCS to new DCS (DO NOT TOUCH)
@@ -231,14 +245,14 @@ fprintf('\n...interpolating detector conjugated to sample space coordinates...')
 O.T_DCS_to_SS = [O.xp, O.yp, O.zp]\[O.x_sam, O.y_sam, O.z_sam]; % equivalent to [a_1, a_2, a_3]*inv(b_1, b_2, b_3])
 
 % map original coordinates to non-orthogonal coordinates
-O.N1gridp = O.T_DCS_to_SS(1,1)*O.Nvgrid + O.T_DCS_to_SS(1,2)*O.Nhgrid + O.T_DCS_to_SS(1,3)*O.Nrgrid;
-O.N2gridp = O.T_DCS_to_SS(2,1)*O.Nvgrid + O.T_DCS_to_SS(2,2)*O.Nhgrid + O.T_DCS_to_SS(2,3)*O.Nrgrid;
-O.N3gridp = O.T_DCS_to_SS(3,1)*O.Nvgrid + O.T_DCS_to_SS(3,2)*O.Nhgrid + O.T_DCS_to_SS(3,3)*O.Nrgrid;
+O.N1gridp = O.T_DCS_to_SS(1,1)*O.N1grid + O.T_DCS_to_SS(1,2)*O.N2grid + O.T_DCS_to_SS(1,3)*O.N3grid;
+O.N2gridp = O.T_DCS_to_SS(2,1)*O.N1grid + O.T_DCS_to_SS(2,2)*O.N2grid + O.T_DCS_to_SS(2,3)*O.N3grid;
+O.N3gridp = O.T_DCS_to_SS(3,1)*O.N1grid + O.T_DCS_to_SS(3,2)*O.N2grid + O.T_DCS_to_SS(3,3)*O.N3grid;
 
 
 % interpolate original reflection data in the detector conjugated frame to sample space frame
 % O.SS_shape_CALC = flip(O.DCS_shape_REC,3);
-O.SS_shape_CALC = interp3(O.Nvgrid, O.Nhgrid, O.Nrgrid, O.DCS_shape_REC, O.N1gridp, O.N2gridp, O.N3gridp, 'linear', 0); % make any values outside original data zero.
+O.SS_shape_CALC = interp3(O.N1grid, O.N2grid, O.N3grid, O.DCS_shape_REC, O.N1gridp, O.N2gridp, O.N3gridp, 'linear', 0); % make any values outside original data zero.
 % O.SS_shape_CALC = flip(O.SS_shape_CALC,1);
 % O.SS_shape_CALC = flip(O.SS_shape_CALC,2);
 
@@ -254,7 +268,7 @@ O.SS_shape_CALC_MASK = single(abs(O.SS_shape_CALC) > amplitude_threshold);
 structure_element = strel('sphere', 3);
 O.SS_shape_CALC_MASK = imerode(imdilate(O.SS_shape_CALC_MASK, structure_element),structure_element); % takes care of dislocation cores
 O.SS_shape_CALC_COM = ceil(centerOfMass(O.SS_shape_CALC_MASK));
-O.SS_shape_CALC = circshift(O.SS_shape_CALC, round(size(O.SS_shape_CALC)/2)-O.SS_shape_CALC_COM);
+O.SS_shape_CALC = circshift(O.SS_shape_CALC, size(O.SS_shape_CALC)/2-O.SS_shape_CALC_COM);
 
 % Output for phasor
 postPhasor.object = O.SS_shape_CALC;

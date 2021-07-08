@@ -9,6 +9,7 @@ classdef PostPhasor < handle
     properties
         data;
         dataTime; 
+        derivatives;
         pre_path;
         path;
         experiment;                        
@@ -36,9 +37,7 @@ classdef PostPhasor < handle
         
     % - Constructor of the object -    
     methods
-        function postPhasor = PostPhasor(input_param)
-            
-            postPhasor.path = input_param.path;
+        function postPhasor = PostPhasor(input_param)           
             postPhasor.pre_path = input_param.pre_path;                       
             
             try
@@ -381,13 +380,13 @@ classdef PostPhasor < handle
             disp('Phase ramp removed!');
         end
         
-        function transform2lab(postPhasor)
+        function transform2lab_backup(postPhasor)
             % Unified coordinate transformation
-            DCS_to_SS;                             
+            DCS_to_SS_backup;                             
             postPhasor.update_plotting_vectors;
         end
         
-        function transform2lab_lab(postPhasor)
+        function transform2lab(postPhasor)
             %change sign of the phase to have a correct displacement field
 %             postPhasor.object = abs(postPhasor.object).*exp(-1j.*angle(postPhasor.object));
             % Unified coordinate transformation           
@@ -401,7 +400,7 @@ classdef PostPhasor < handle
 %             postPhasor.object = abs(postPhasor.object).*exp(-1j.*angle(postPhasor.object));
             % Unified coordinate transformation           
             
-            DCS_to_SS_LAB; 
+            DCS_to_SS; 
             postPhasor.update_plotting_vectors;
         end
         
@@ -437,9 +436,9 @@ classdef PostPhasor < handle
                         % the + sign before the sind (2nd element) of the
                         % matrix is there due to the rotation direction of
                         % the detector arm                                              
-                        postPhasor.experiment.k_s = [sind(postPhasor.experiment.delta+postPhasor.experiment.shift_delta)*cosd(postPhasor.experiment.gamma+postPhasor.experiment.shift_gamma);...
-                        sind(postPhasor.experiment.gamma+postPhasor.experiment.shift_gamma);...
-                        cosd(postPhasor.experiment.delta+postPhasor.experiment.shift_delta)*cosd(postPhasor.experiment.gamma+postPhasor.experiment.shift_gamma)].*k_mod;
+                        postPhasor.experiment.k_s = [sind(postPhasor.experiment.delta+postPhasor.experiment.delta_correction)*cosd(postPhasor.experiment.gamma+postPhasor.experiment.gamma_correction);...
+                        sind(postPhasor.experiment.gamma+postPhasor.experiment.gamma_correction);...
+                        cosd(postPhasor.experiment.delta+postPhasor.experiment.delta_correction)*cosd(postPhasor.experiment.gamma+postPhasor.experiment.gamma_correction)].*k_mod;
 
                         % The direction of the wave transfer in the lab frame
                         postPhasor.experiment.qVectorLab = postPhasor.experiment.k_s-postPhasor.experiment.k_i;
@@ -453,9 +452,9 @@ classdef PostPhasor < handle
                     % gamma - positive rotation around vertical axis
                     % delta - negative rotation around horizontal axis
                     try
-                        postPhasor.experiment.k_s = [sind(postPhasor.experiment.gamma+postPhasor.experiment.shift_gamma)*cosd(postPhasor.experiment.delta+postPhasor.experiment.shift_delta);...
-                        sind(postPhasor.experiment.delta+postPhasor.experiment.shift_delta);...
-                        cosd(postPhasor.experiment.gamma+postPhasor.experiment.shift_gamma)*cosd(postPhasor.experiment.delta+postPhasor.experiment.shift_delta)].*k_mod;
+                        postPhasor.experiment.k_s = [sind(postPhasor.experiment.gamma+postPhasor.experiment.gamma_correction)*cosd(postPhasor.experiment.delta+postPhasor.experiment.delta_correction);...
+                        sind(postPhasor.experiment.delta+postPhasor.experiment.delta_correction);...
+                        cosd(postPhasor.experiment.gamma+postPhasor.experiment.gamma_correction)*cosd(postPhasor.experiment.delta+postPhasor.experiment.delta_correction)].*k_mod;
                         
                     % The direction of the wave transfer in the lab frame
                         postPhasor.experiment.qVectorLab = postPhasor.experiment.k_s-postPhasor.experiment.k_i;
@@ -469,9 +468,9 @@ classdef PostPhasor < handle
                     % gamma - negative rotation around vertical axis
                     % delta - negative rotation around horizontal axis
                     try
-                        postPhasor.experiment.k_s = [sind(-postPhasor.experiment.gamma+postPhasor.experiment.shift_gamma)*cosd(postPhasor.experiment.delta+postPhasor.experiment.shift_delta);...
-                        sind(postPhasor.experiment.delta+postPhasor.experiment.shift_delta);...
-                        cosd(-postPhasor.experiment.gamma+postPhasor.experiment.shift_gamma)*cosd(postPhasor.experiment.delta+postPhasor.experiment.shift_delta)].*k_mod;
+                        postPhasor.experiment.k_s = [sind(-postPhasor.experiment.gamma+postPhasor.experiment.gamma_correction)*cosd(postPhasor.experiment.delta+postPhasor.experiment.delta_correction);...
+                        sind(postPhasor.experiment.delta+postPhasor.experiment.delta_correction);...
+                        cosd(-postPhasor.experiment.gamma+postPhasor.experiment.gamma_correction)*cosd(postPhasor.experiment.delta+postPhasor.experiment.delta_correction)].*k_mod;
                     
                         postPhasor.experiment.qVectorLab = postPhasor.experiment.k_s-postPhasor.experiment.k_i;
                         
@@ -563,12 +562,7 @@ classdef PostPhasor < handle
             postPhasor.strain_mask = postPhasor.strain_mask == 2;
             
             postPhasor.update_plotting_vectors;
-        end
-        
-%         function [averageStrainBulk, averageStrainShell] = calculateAverageStrainInSegments(postPhasor)
-%             averageStrainBulk = mean(postPhasor.strain(:).*postPhasor.strain_mask_bulk(:));
-%             averageStrainShell = mean(postPhasor.strain(:).*postPhasor.strain_mask_shell(:));
-%         end
+        end       
             
         function calculate_strain_unwrap(postPhasor, strain_axis)
             %jclark
@@ -1475,6 +1469,25 @@ classdef PostPhasor < handle
                 end    
         end
         
+        function calculate_central_profile(postPhasor)                                       
+                val = squeeze(abs(postPhasor.object(:,round(end/2),round(end/2))));
+                val_contour = squeeze((postPhasor.mask(:,round(end/2),round(end/2)))).*max(val(:));
+                val_contour_mask = val_contour>0;
+                val_contour_length1 = sum(val_contour_mask).*postPhasor.object_sampling(1)*1e9;
+                
+                val = squeeze(abs(postPhasor.object(round(end/2),:,round(end/2))));
+                val_contour = squeeze((postPhasor.mask(round(end/2),:,round(end/2)))).*max(val(:));                
+                val_contour_mask = val_contour>0;
+                val_contour_length2 = sum(val_contour_mask).*postPhasor.object_sampling(2)*1e9;
+               
+                val = squeeze(abs(postPhasor.object(round(end/2),round(end/2),:)));
+                val_contour = squeeze(postPhasor.mask(round(end/2),round(end/2),:)).*max(val(:));
+                val_contour_mask = val_contour>0;
+                val_contour_length3 = sum(val_contour_mask).*postPhasor.object_sampling(3)*1e9;
+                
+                postPhasor.derivatives.central_profile_lengths = [val_contour_length1, val_contour_length2, val_contour_length3];
+        end
+        
         function plot_central_profiles(postPhasor,volume)
             if ~exist('volume','var')
                 volume = 'all';
@@ -1652,7 +1665,7 @@ classdef PostPhasor < handle
              save_path = fullfile(postPhasor.pre_path, 'post_processing');
             mkdir(save_path);
             
-            savemat2vtk(fullfile(save_path, 'object.vtk'),      postPhasor.object.*postPhasor.mask,     postPhasor.object_sampling*1e9);
+            savemat2vtk(fullfile(save_path, 'object.vtk'),          postPhasor.object.*postPhasor.mask,     postPhasor.object_sampling*1e9);
             try
                 savemat2vtk(fullfile(save_path, 'displacement.vtk'), abs(postPhasor.object), postPhasor.object_sampling*1e9,     postPhasor.displacement.*postPhasor.mask);
             catch

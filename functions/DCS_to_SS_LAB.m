@@ -77,8 +77,8 @@ switch postPhasor.experiment.beamline
     % axis), z - along the incoming beam (bram axis)
     case '34idc'        
         % beamline detector motor angles in degrees
-        O.detectorVerticalAxisRotation = postPhasor.experiment.delta;       
-        O.detectorHorizontalAxisRotation = postPhasor.experiment.gamma;
+        O.detectorVerticalAxisRotation = postPhasor.experiment.delta+postPhasor.experiment.delta_correction;       
+        O.detectorHorizontalAxisRotation = postPhasor.experiment.gamma+postPhasor.experiment.gamma_correction;
         % Final orientation in the laboratory frame
         % beamline sample motor angles in degrees (set to the motors' default angles for lab space)
         
@@ -87,8 +87,8 @@ switch postPhasor.experiment.beamline
         O.sampleHorizontalAxisRotation = 0;     
     case 'nanomax'
         % beamline detector motor angles in degrees
-        O.detectorVerticalAxisRotation = postPhasor.experiment.gamma;
-        O.detectorHorizontalAxisRotation = postPhasor.experiment.delta;
+        O.detectorVerticalAxisRotation = postPhasor.experiment.gamma+postPhasor.experiment.gamma_correction;
+        O.detectorHorizontalAxisRotation = postPhasor.experiment.delta+postPhasor.experiment.delta_correction;
 
         O.sampleVerticalAxisRotation = 0;
         O.sampleBeamAxisRotation = 90;
@@ -97,8 +97,8 @@ switch postPhasor.experiment.beamline
 %         DCS_to_SS_MAXIV_NanoMAX;    
     case 'p10'
         % beamline detector motor angles in degrees
-        O.detectorVerticalAxisRotation = postPhasor.experiment.gamma;
-        O.detectorHorizontalAxisRotation = postPhasor.experiment.delta;
+        O.detectorVerticalAxisRotation = postPhasor.experiment.gamma+postPhasor.experiment.gamma_correction;
+        O.detectorHorizontalAxisRotation = postPhasor.experiment.delta+postPhasor.experiment.delta_correction;
 
         O.sampleVerticalAxisRotation = 0;
         O.sampleBeamAxisRotation = 90;
@@ -126,7 +126,7 @@ switch postPhasor.experiment.beamline
         [O.R_dqp_12, O.R_dqp_3, O.R_xyz, O.S_0lab_dir] = plugin_APS_34IDC(O.sampleVerticalAxisRotation, O.sampleBeamAxisRotation, O.sampleHorizontalAxisRotation, O.detectorVerticalAxisRotation, O.detectorHorizontalAxisRotation, O.rocking_increment, O.rocking_angle);
 
     case 'nanomax'
-        [O.R_dqp_12, O.R_dqp_3, O.R_xyz, O.S_0lab_dir] = plugin_NanoMAX(O.theta_bl, O.chi_bl, O.phi_bl, O.delta_bl, O.gamma_bl, O.rocking_increment, O.rocking_angle);   
+        [O.R_dqp_12, O.R_dqp_3, O.R_xyz, O.S_0lab_dir] = plugin_NanoMAX(O.sampleVerticalAxisRotation, O.sampleBeamAxisRotation, O.sampleHorizontalAxisRotation, O.detectorVerticalAxisRotation, O.detectorHorizontalAxisRotation, O.rocking_increment, O.rocking_angle);   
         
     case 'p10'
         [O.R_dqp_12, O.R_dqp_3, O.R_xyz, O.S_0lab_dir] = plugin_P10(O.sampleVerticalAxisRotation, O.sampleBeamAxisRotation, O.sampleHorizontalAxisRotation, O.detectorVerticalAxisRotation, O.detectorHorizontalAxisRotation, O.rocking_increment, O.rocking_angle);           
