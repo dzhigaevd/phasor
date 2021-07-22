@@ -420,7 +420,6 @@ classdef PostPhasor < handle
         end                
         
         function calculate_qVectorLab(postPhasor)
-            % For beamline geometries go to: https://github.com/DzhigaevD/phasor/wiki/Beamline-geometries
             % Modulus of the incidence wave-vector
             k_mod = (2*pi)/postPhasor.experiment.wavelength;
             
@@ -441,34 +440,45 @@ classdef PostPhasor < handle
                         postPhasor.experiment.k_s = [sind(postPhasor.experiment.delta+postPhasor.experiment.delta_correction)*cosd(postPhasor.experiment.gamma+postPhasor.experiment.gamma_correction);...
                         sind(postPhasor.experiment.gamma+postPhasor.experiment.gamma_correction);...
                         cosd(postPhasor.experiment.delta+postPhasor.experiment.delta_correction)*cosd(postPhasor.experiment.gamma+postPhasor.experiment.gamma_correction)].*k_mod;
-                        
+
+                        % The direction of the wave transfer in the lab frame
+                        postPhasor.experiment.qVectorLab = postPhasor.experiment.k_s-postPhasor.experiment.k_i;
+
+                        disp('+ Calculated Q-vector in lab system of 34idc!');                     
                     case 'p10'
                         % gamma - positive rotation around vertical axis
                         % delta - negative rotation around horizontal axis
-                        postPhasor.experiment.k_s = [sind(postPhasor.experiment.gamma+postPhasor.experiment.gamma_correction)*cosd(postPhasor.experiment.delta+postPhasor.experiment.delta_correction);...
-                        sind(postPhasor.experiment.delta+postPhasor.experiment.delta_correction);...
-                        cosd(postPhasor.experiment.gamma+postPhasor.experiment.gamma_correction)*cosd(postPhasor.experiment.delta+postPhasor.experiment.delta_correction)].*k_mod;
-                    
+                            postPhasor.experiment.k_s = [sind(postPhasor.experiment.gamma+postPhasor.experiment.gamma_correction)*cosd(postPhasor.experiment.delta+postPhasor.experiment.delta_correction);...
+                            sind(postPhasor.experiment.delta+postPhasor.experiment.delta_correction);...
+                            cosd(postPhasor.experiment.gamma+postPhasor.experiment.gamma_correction)*cosd(postPhasor.experiment.delta+postPhasor.experiment.delta_correction)].*k_mod;
+
+                        % The direction of the wave transfer in the lab frame
+                            postPhasor.experiment.qVectorLab = postPhasor.experiment.k_s-postPhasor.experiment.k_i;
+
+                            disp('+ Calculated Q-vector in lab system of p10!');     
+
                     case 'nanomax'
                         % gamma - negative rotation around vertical axis
                         % delta - negative rotation around horizontal axis
+
                         postPhasor.experiment.k_s = [sind(-postPhasor.experiment.gamma+postPhasor.experiment.gamma_correction)*cosd(postPhasor.experiment.delta+postPhasor.experiment.delta_correction);...
                         sind(postPhasor.experiment.delta+postPhasor.experiment.delta_correction);...
-                        cosd(-postPhasor.experiment.gamma+postPhasor.experiment.gamma_correction)*cosd(postPhasor.experiment.delta+postPhasor.experiment.delta_correction)].*k_mod;                          
+                        cosd(-postPhasor.experiment.gamma+postPhasor.experiment.gamma_correction)*cosd(postPhasor.experiment.delta+postPhasor.experiment.delta_correction)].*k_mod;
+
+                        postPhasor.experiment.qVectorLab = postPhasor.experiment.k_s-postPhasor.experiment.k_i;
+
+                        disp('+ Calculated Q-vector in lab system of nanomax!');
+                                           
                 end
-                
-                % The direction of the wave transfer in the lab frame
-                postPhasor.experiment.qVectorLab = postPhasor.experiment.k_s-postPhasor.experiment.k_i;
-                fprintf('+ Calculated Q-vector in lab system of %s!\n',postPhasor.experiment.beamline);
-                
-                disp('Derivatives from the geometry:');
-                twoTheta = acosd(dot(postPhasor.experiment.k_i,postPhasor.experiment.k_s)/(norm(postPhasor.experiment.k_i)*norm(postPhasor.experiment.k_s)));
-                fprintf('2Theta is: %.3f\n',twoTheta);
-                fprintf('|Q| is: %.3f\n',norm(postPhasor.experiment.qVectorLab)*1e-10);
-                fprintf('d-spacing is: %.3f\n',2*pi/norm(postPhasor.experiment.qVectorLab)*1e10);
+                fprintf('+ Calculated Q-vector in lab system of %s!',postPhasor.experiment.beamline);
             catch
-                error('Can not calculate Q-vector in lab system for %s!',postPhasor.experiment.beamline);
-            end           
+                error(sprintf('Can not calculate Q-vector in lab system for %s!',postPhasor.experiment.beamline);
+            end 
+            
+            twoTheta = acosd(dot(postPhasor.experiment.k_i,postPhasor.experiment.k_s)/(norm(postPhasor.experiment.k_i)*norm(postPhasor.experiment.k_s)));
+            fprintf('2Theta is: %.3f\n',twoTheta);
+            fprintf('|Q| is: %.3f\n',norm(postPhasor.experiment.qVectorLab)*1e-10);
+            fprintf('d-spacing is: %.3f\n',2*pi/norm(postPhasor.experiment.qVectorLab)*1e10);
         end
         
         function calculate_volume(postPhasor)
