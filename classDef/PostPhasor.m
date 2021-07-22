@@ -339,7 +339,7 @@ classdef PostPhasor < handle
         
         function center_object(postPhasor)
             [postPhasor.object, com_val] = center_array_com(postPhasor.object);            
-            fprintf('+ Object centered at [%.1f %.1f %.1f]!\n',com_vall(1),com_vall(2),com_vall(3));
+            fprintf('+ Object centered at [%.1f %.1f %.1f]!\n',com_val(1),com_val(2),com_val(3));
         end
         
         function rotateObject(postPhasor,rotationAngles)
@@ -489,8 +489,12 @@ classdef PostPhasor < handle
                 postPhasor.displacement = -angle(postPhasor.object)/norm(postPhasor.experiment.qVectorLab); % displacment field
                 disp('+ Displacement field is calculated as negative phase, for MATLAB FFT')
             catch
-                postPhasor.calculate_qVectorLab;
-                postPhasor.calculate_displacement;
+                try
+                    postPhasor.calculate_qVectorLab;
+                    postPhasor.calculate_displacement;
+                catch
+                    error('Can not calculate displacement, check experimental parameters!');
+                end
             end
         end                
         
@@ -515,39 +519,43 @@ classdef PostPhasor < handle
                 postPhasor.strain_mask = postPhasor.mask;
                 postPhasor.update_plotting_vectors;
             catch
-                postPhasor.calculate_qVectorLab;
-                postPhasor.calculate_strainLab;
+                try
+                    postPhasor.calculate_qVectorLab;
+                    postPhasor.calculate_strainLab;
+                catch
+                    error('Can not calculate strain, check experimental parameters!');
+                end
             end
         end
         
-        function calculate_strain(postPhasor, strain_axis)
-            warning('This is a depricated version of strain calculation, will be removed soon! Use calculate_strainLab!');
-            H = 2*pi/postPhasor.experiment.d_spacing;
-
-            postPhasor.displacement = angle(postPhasor.object)./H;
-            
-            if strain_axis < 0
-                postPhasor.strain = flip(diff(flip(postPhasor.displacement,abs(strain_axis)),1,abs(strain_axis))./postPhasor.object_sampling(abs(strain_axis)),abs(strain_axis));
-            else
-                postPhasor.strain = diff(postPhasor.displacement,1,strain_axis)./postPhasor.object_sampling(strain_axis);
-            end
-            
-            mask_shift = [0,0,0];
-            mask_shift(abs(strain_axis)) = 1;
-
-            if abs(strain_axis) == 1
-                postPhasor.strain_mask = postPhasor.mask(1:end-1,:,:);
-            elseif abs(strain_axis) == 2
-                postPhasor.strain_mask = postPhasor.mask(:,1:end-1,:);
-            elseif abs(strain_axis) == 3
-                postPhasor.strain_mask = postPhasor.mask(:,:,1:end-1);
-            end
-
-            postPhasor.strain_mask = postPhasor.strain_mask+circshift(postPhasor.strain_mask,mask_shift);
-            postPhasor.strain_mask = postPhasor.strain_mask == 2;
-            
-            postPhasor.update_plotting_vectors;
-        end       
+%         function calculate_strain(postPhasor, strain_axis)
+%             warning('This is a depricated version of strain calculation, will be removed soon! Use calculate_strainLab!');
+%             H = 2*pi/postPhasor.experiment.d_spacing;
+% 
+%             postPhasor.displacement = angle(postPhasor.object)./H;
+%             
+%             if strain_axis < 0
+%                 postPhasor.strain = flip(diff(flip(postPhasor.displacement,abs(strain_axis)),1,abs(strain_axis))./postPhasor.object_sampling(abs(strain_axis)),abs(strain_axis));
+%             else
+%                 postPhasor.strain = diff(postPhasor.displacement,1,strain_axis)./postPhasor.object_sampling(strain_axis);
+%             end
+%             
+%             mask_shift = [0,0,0];
+%             mask_shift(abs(strain_axis)) = 1;
+% 
+%             if abs(strain_axis) == 1
+%                 postPhasor.strain_mask = postPhasor.mask(1:end-1,:,:);
+%             elseif abs(strain_axis) == 2
+%                 postPhasor.strain_mask = postPhasor.mask(:,1:end-1,:);
+%             elseif abs(strain_axis) == 3
+%                 postPhasor.strain_mask = postPhasor.mask(:,:,1:end-1);
+%             end
+% 
+%             postPhasor.strain_mask = postPhasor.strain_mask+circshift(postPhasor.strain_mask,mask_shift);
+%             postPhasor.strain_mask = postPhasor.strain_mask == 2;
+%             
+%             postPhasor.update_plotting_vectors;
+%         end       
             
         function calculate_strain_unwrap(postPhasor, strain_axis)
             %jclark
@@ -696,6 +704,48 @@ classdef PostPhasor < handle
 %             figure; 
 %             plot(hH.BinEdges(1:end-1),log10(hH.Values));
 %             title('log-plot of probability');
+        end
+
+        function calculate_central_profile_amplitude(postPhasor)                                       
+            val = squeeze(abs(postPhasor.object(:,round(end/2),round(end/2))));
+            val_contour = squeeze((postPhasor.mask(:,round(end/2),round(end/2)))).*max(val(:));
+            val_contour_mask = val_contour>0;
+            val_contour_length1 = sum(val_contour_mask).*postPhasor.object_sampling(1)*1e9;
+
+            val = squeeze(abs(postPhasor.object(round(end/2),:,round(end/2))));
+            val_contour = squeeze((postPhasor.mask(round(end/2),:,round(end/2)))).*max(val(:));                
+            val_contour_mask = val_contour>0;
+            val_contour_length2 = sum(val_contour_mask).*postPhasor.object_sampling(2)*1e9;
+
+            val = squeeze(abs(postPhasor.object(round(end/2),round(end/2),:)));
+            val_contour = squeeze(postPhasor.mask(round(end/2),round(end/2),:)).*max(val(:));
+            val_contour_mask = val_contour>0;
+            val_contour_length3 = sum(val_contour_mask).*postPhasor.object_sampling(3)*1e9;
+
+            postPhasor.derivatives.central_profile_lengths = [val_contour_length1, val_contour_length2, val_contour_length3];
+        end
+        
+        function calculate_central_profile_strain(postPhasor)     
+            try
+                val = squeeze(postPhasor.strain(:,round(end/2),round(end/2)));
+                val_contour = squeeze((postPhasor.mask(:,round(end/2),round(end/2)))).*max(val(:));
+                val_contour_mask = val_contour>0;
+                postPhasor.derivatives.central_profiles_strain1 = val.*val_contour_mask;
+
+                val = squeeze(abs(postPhasor.strain(round(end/2),:,round(end/2))));
+                val_contour = squeeze((postPhasor.mask(round(end/2),:,round(end/2)))).*max(val(:));                
+                val_contour_mask = val_contour>0;
+                postPhasor.derivatives.central_profiles_strain2 = val.*val_contour_mask;
+                
+                val = squeeze(abs(postPhasor.strain(round(end/2),round(end/2),:)));
+                val_contour = squeeze(postPhasor.mask(round(end/2),round(end/2),:)).*max(val(:));
+                val_contour_mask = val_contour>0;
+                postPhasor.derivatives.central_profiles_strain3 = val.*val_contour_mask;               
+            catch
+                postPhasor.calculate_qVectorLab;
+                postPhasor.calculate_strainLab;
+                calculate_central_profile_strain;
+            end
         end
         
         function calculate_angular_profile(postPhasor, source, slice, center, radius, startAngle)
@@ -1193,6 +1243,8 @@ classdef PostPhasor < handle
         end
         
         function plot_alpha_slice(postPhasor,zoom_value,type)
+            % Plot derivatives with opacity map from amplitude of the
+            % reconstruction
             if nargin == 1
                 zoom_value = [1,1,1];
                 type = 'amp-disp';
@@ -1452,26 +1504,7 @@ classdef PostPhasor < handle
                 catch
                     error('No strain or core-shell mask found!')
                 end    
-        end
-        
-        function calculate_central_profile(postPhasor)                                       
-                val = squeeze(abs(postPhasor.object(:,round(end/2),round(end/2))));
-                val_contour = squeeze((postPhasor.mask(:,round(end/2),round(end/2)))).*max(val(:));
-                val_contour_mask = val_contour>0;
-                val_contour_length1 = sum(val_contour_mask).*postPhasor.object_sampling(1)*1e9;
-                
-                val = squeeze(abs(postPhasor.object(round(end/2),:,round(end/2))));
-                val_contour = squeeze((postPhasor.mask(round(end/2),:,round(end/2)))).*max(val(:));                
-                val_contour_mask = val_contour>0;
-                val_contour_length2 = sum(val_contour_mask).*postPhasor.object_sampling(2)*1e9;
-               
-                val = squeeze(abs(postPhasor.object(round(end/2),round(end/2),:)));
-                val_contour = squeeze(postPhasor.mask(round(end/2),round(end/2),:)).*max(val(:));
-                val_contour_mask = val_contour>0;
-                val_contour_length3 = sum(val_contour_mask).*postPhasor.object_sampling(3)*1e9;
-                
-                postPhasor.derivatives.central_profile_lengths = [val_contour_length1, val_contour_length2, val_contour_length3];
-        end
+        end        
         
         function plot_central_profiles(postPhasor,volume)
             if ~exist('volume','var')
