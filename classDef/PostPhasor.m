@@ -711,18 +711,23 @@ classdef PostPhasor < handle
             val_contour = squeeze((postPhasor.mask(:,round(end/2),round(end/2)))).*max(val(:));
             val_contour_mask = val_contour>0;
             val_contour_length1 = sum(val_contour_mask).*postPhasor.object_sampling(1)*1e9;
+            postPhasor.derivatives.central_profile_amplitude1 = val;
 
             val = squeeze(abs(postPhasor.object(round(end/2),:,round(end/2))));
             val_contour = squeeze((postPhasor.mask(round(end/2),:,round(end/2)))).*max(val(:));                
             val_contour_mask = val_contour>0;
             val_contour_length2 = sum(val_contour_mask).*postPhasor.object_sampling(2)*1e9;
+            postPhasor.derivatives.central_profile_amplitude2 = val;
 
             val = squeeze(abs(postPhasor.object(round(end/2),round(end/2),:)));
             val_contour = squeeze(postPhasor.mask(round(end/2),round(end/2),:)).*max(val(:));
             val_contour_mask = val_contour>0;
             val_contour_length3 = sum(val_contour_mask).*postPhasor.object_sampling(3)*1e9;
+            postPhasor.derivatives.central_profile_amplitude3 = val;
 
             postPhasor.derivatives.central_profile_lengths = [val_contour_length1, val_contour_length2, val_contour_length3];
+            
+            disp('+ Object shape profiles are saved to derivatives in postPhasor!');
         end
         
         function calculate_central_profile_strain(postPhasor)     
@@ -740,7 +745,9 @@ classdef PostPhasor < handle
                 val = squeeze(abs(postPhasor.strain(round(end/2),round(end/2),:)));
                 val_contour = squeeze(postPhasor.mask(round(end/2),round(end/2),:)).*max(val(:));
                 val_contour_mask = val_contour>0;
-                postPhasor.derivatives.central_profiles_strain3 = val.*val_contour_mask;               
+                postPhasor.derivatives.central_profiles_strain3 = val.*val_contour_mask;       
+                
+                disp('+ Object strain profiles are saved to derivatives in postPhasor!');
             catch
                 postPhasor.calculate_qVectorLab;
                 postPhasor.calculate_strainLab;
@@ -1379,6 +1386,12 @@ classdef PostPhasor < handle
         end
         
         function plot_strain_slice(postPhasor,zoom_value,slice)
+            try
+                fprintf('Zoom values for the plots: [%.1f,%.1f,%.1f]',zoom_value(1),zoom_value(2),zoom_value(3));
+            catch
+                zoom_value = [1,1,1];   
+                fprintf('Zoom values are set to default: [%.1f,%.1f,%.1f]',zoom_value(1),zoom_value(2),zoom_value(3));
+            end
             
             postPhasor.setZoom(zoom_value); % should be 3-element vector
             
@@ -1392,7 +1405,11 @@ classdef PostPhasor < handle
                             'AlphaData',postPhasor.strain_mask(:,:,round(end/2)));                    
                     axis image;colorbar;colorbar;title('Strain');xlabel('Position [nm]');ylabel('Position [nm]');
                     set(gca,'FontSize',20);zoom(postPhasor.plotting.zoom_value(1));
-
+                    try
+                        caxis(postPhasor.plotting.strain_limits(1,:))
+                    catch
+                    end
+                        
                     subplot(1,3,2);
                     imagesc(postPhasor.plotting.strain.vector3,...
                             postPhasor.plotting.strain.vector1(2:end),...
@@ -1400,7 +1417,11 @@ classdef PostPhasor < handle
                             'AlphaData',squeeze(postPhasor.strain_mask(:,round(end/2),:)));
                     axis image;colorbar;colorbar;title('Strain');xlabel('Position [nm]');ylabel('Position [nm]');
                     set(gca,'FontSize',20);zoom(postPhasor.plotting.zoom_value(2));
-
+                    try
+                        caxis(postPhasor.plotting.strain_limits(2,:))
+                    catch
+                    end
+                    
                     subplot(1,3,3);
                     imagesc(postPhasor.plotting.strain.vector3,...
                             postPhasor.plotting.strain.vector2,...
@@ -1408,6 +1429,11 @@ classdef PostPhasor < handle
                             'AlphaData',squeeze(postPhasor.strain_mask(round(end/2),:,:)));
                     axis image;colorbar;colorbar;title('Strain');xlabel('Position [nm]');ylabel('Position [nm]');
                     set(gca,'FontSize',20);zoom(postPhasor.plotting.zoom_value(3));
+                    try
+                        caxis(postPhasor.plotting.strain_limits(3,:))
+                    catch
+                    end
+                    
                     colormap jet
                 catch
                     error('No strain found!')
@@ -1618,63 +1644,83 @@ classdef PostPhasor < handle
             fprintf('+ postPhasor instance is saved to %s\n', s);
         end
         
-        function save_figures(postPhasor, zoom_value)            
+        function save_figures(postPhasor, zoom_value, values)            
+            try 
+                zoom_value;                
+            catch
+                zoom_value = [1,1,1];
+                warning('No zoom value was specified! Using [1,1,1]...');
+            end
+            
+            try
+                values;
+            catch
+                values = {'all'};
+                warning('No values were specified for plotting! Using all...');
+            end
+            
             save_path = fullfile(postPhasor.pre_path, 'post_processing');
             save_path_figures = fullfile(save_path, 'figures');
             
             mkdir(save_path);
             mkdir(save_path_figures);
             
-            % Figures
-            postPhasor.plot_amplitude_slice(zoom_value);
-            hFig = gcf;
-            set(hFig,'Units','Inches');
-            pos = get(hFig,'Position');
-            set(hFig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)]);
-            print(hFig,fullfile(save_path_figures,'amplitude_slice.pdf'),'-dpdf','-r0');
-            print(hFig,fullfile(save_path_figures,'amplitude_slice.png'),'-dpng','-r0');
-            savefig(hFig,fullfile(save_path_figures,'amplitude_slice.fig'));
-            close(hFig);
+            if ismember('amp',values) || ismember('all',values)
+                % Figures
+                postPhasor.plot_amplitude_slice(zoom_value);
+                hFig = gcf;
+                set(hFig,'Units','Inches');
+                pos = get(hFig,'Position');
+                set(hFig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)]);
+                print(hFig,fullfile(save_path_figures,'amplitude_slice.pdf'),'-dpdf','-r0');
+                print(hFig,fullfile(save_path_figures,'amplitude_slice.png'),'-dpng','-r0');
+                savefig(hFig,fullfile(save_path_figures,'amplitude_slice.fig'));
+                close(hFig);
             
-            postPhasor.plot_phase_slice(zoom_value);
-            hFig = gcf;
-            set(hFig,'Units','Inches');
-            pos = get(hFig,'Position');
-            set(hFig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)]);
-            print(hFig,fullfile(save_path_figures,'phase_slice.pdf'),'-dpdf','-r0');
-            print(hFig,fullfile(save_path_figures,'phase_slice.png'),'-dpng','-r0');
-            savefig(hFig,fullfile(save_path_figures,'phase_slice.fig'));
-            close(hFig);
+            elseif ismember('phase',values) || ismember('all',values)
+                postPhasor.plot_phase_slice(zoom_value);
+                hFig = gcf;
+                set(hFig,'Units','Inches');
+                pos = get(hFig,'Position');
+                set(hFig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)]);
+                print(hFig,fullfile(save_path_figures,'phase_slice.pdf'),'-dpdf','-r0');
+                print(hFig,fullfile(save_path_figures,'phase_slice.png'),'-dpng','-r0');
+                savefig(hFig,fullfile(save_path_figures,'phase_slice.fig'));
+                close(hFig);
             
-            postPhasor.plot_strain_slice(zoom_value);
-            hFig = gcf;
-            set(hFig,'Units','Inches');
-            pos = get(hFig,'Position');
-            set(hFig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)]);
-            print(hFig,fullfile(save_path_figures,'strain_slice.pdf'),'-dpdf','-r0');
-            print(hFig,fullfile(save_path_figures,'strain_slice.png'),'-dpng','-r0');
-            savefig(hFig,fullfile(save_path_figures,'strain_slice.fig'));
-            close(hFig);
+            elseif ismember('strain',values) || ismember('all',values)
+                postPhasor.plot_strain_slice(zoom_value);
+                hFig = gcf;
+                set(hFig,'Units','Inches');
+                pos = get(hFig,'Position');
+                set(hFig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)]);
+                print(hFig,fullfile(save_path_figures,'strain_slice.pdf'),'-dpdf','-r0');
+                print(hFig,fullfile(save_path_figures,'strain_slice.png'),'-dpng','-r0');
+                savefig(hFig,fullfile(save_path_figures,'strain_slice.fig'));
+                close(hFig);
             
-            postPhasor.plot_displacement_slice(zoom_value);
-            hFig = gcf;
-            set(hFig,'Units','Inches');
-            pos = get(hFig,'Position');
-            set(hFig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)]);
-            print(hFig,fullfile(save_path_figures,'displacement_slice.pdf'),'-dpdf','-r0');
-            print(hFig,fullfile(save_path_figures,'displacement_slice.png'),'-dpng','-r0');
-            savefig(hFig,fullfile(save_path_figures,'displacement_slice.fig'));
-            close(hFig);
+            elseif ismember('displ',values) || ismember('all',values)
+                postPhasor.plot_displacement_slice(zoom_value);
+                hFig = gcf;
+                set(hFig,'Units','Inches');
+                pos = get(hFig,'Position');
+                set(hFig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)]);
+                print(hFig,fullfile(save_path_figures,'displacement_slice.pdf'),'-dpdf','-r0');
+                print(hFig,fullfile(save_path_figures,'displacement_slice.png'),'-dpng','-r0');
+                savefig(hFig,fullfile(save_path_figures,'displacement_slice.fig'));
+                close(hFig);
             
-            postPhasor.plot_central_profiles('amplitude');
-            hFig = gcf;
-            set(hFig,'Units','Inches');
-            pos = get(hFig,'Position');
-            set(hFig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)]);
-            print(hFig,fullfile(save_path_figures,'amplitude_central_profiles.pdf'),'-dpdf','-r0');
-            print(hFig,fullfile(save_path_figures,'amplitude_central_profiles.png'),'-dpng','-r0');
-            savefig(hFig,fullfile(save_path_figures,'amplitude_central_profiles.fig'));
-            close(hFig);
+            elseif ismember('amp_profiles',values) || ismember('all',values)
+                postPhasor.plot_central_profiles('amplitude');
+                hFig = gcf;
+                set(hFig,'Units','Inches');
+                pos = get(hFig,'Position');
+                set(hFig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)]);
+                print(hFig,fullfile(save_path_figures,'amplitude_central_profiles.pdf'),'-dpdf','-r0');
+                print(hFig,fullfile(save_path_figures,'amplitude_central_profiles.png'),'-dpng','-r0');
+                savefig(hFig,fullfile(save_path_figures,'amplitude_central_profiles.fig'));
+                close(hFig);
+            end
             
             fprintf('+ Figures are saved to %s\n', save_path_figures);
         end
