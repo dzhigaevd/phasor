@@ -668,7 +668,41 @@ classdef PostPhasor < handle
                 legend(title_s,'Zero strain','FWHM','2FWHM')
             end
         end
-
+        
+        function calculate_central_profile_data(postPhasor,fitFlag)
+            try 
+                postPhasor.data;
+            catch
+                error('No data was found in the object!')
+            end
+            
+            try
+                sourceData = squeeze(sum(postPhasor.data,3));
+                centralPixel = round(ndimCOM(sourceData,'manual'));
+                
+                postPhasor.derivatives.data.lineProfile1 = squeeze(sourceData(:,centralPixel(2)));
+                postPhasor.derivatives.data.lineProfile2 = squeeze(sourceData(centralPixel(1),:));
+                
+                postPhasor.derivatives.data.positions1 = (1:length(postPhasor.derivatives.data.lineProfile1)).*postPhasor.experiment.detector_pitch*1e6;
+                postPhasor.derivatives.data.positions2 = (1:length(postPhasor.derivatives.data.lineProfile2)).*postPhasor.experiment.detector_pitch*1e6;
+                
+                figure;                
+                subplot(1,2,1);
+                plot(postPhasor.derivatives.data.positions1,postPhasor.derivatives.data.lineProfile1');title('1st index profile');xlabel('Position on detector [\mu{m}]');
+                subplot(1,2,2);
+                plot(postPhasor.derivatives.data.positions2,postPhasor.derivatives.data.lineProfile2);title('2nd index profile');xlabel('Position on detector [\mu{m}]');
+            catch
+                error('Could not calculate and/or plot data profiles!')
+            end
+            
+            try
+                fitFlag;
+                
+            catch
+            end
+                
+        end
+        
         function calculate_central_profile_amplitude(postPhasor)                                       
             val = squeeze(abs(postPhasor.object(:,round(end/2),round(end/2))));
             val_contour = squeeze((postPhasor.mask(:,round(end/2),round(end/2)))).*max(val(:));

@@ -1,6 +1,7 @@
 function [OUT] = ndimCOM(IN,type)    
-    if strcmp(type,'manual')        
-        imagesc(log10(IN));axis image
+    if strcmp(type,'manual')    
+        figure;
+        imagesc(IN);axis image
         h = impoly;
         hMask = createMask(h);
         IN = IN.*hMask;
