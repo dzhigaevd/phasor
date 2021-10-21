@@ -477,6 +477,19 @@ classdef PostPhasor < handle
             end                        
         end
         
+        function calculate_amplitude_histogram(postPhasor)
+            try
+                histogramHandle= histogram(abs(postPhasor.object));
+                set(gca,'YScale','log');
+                xlabel('Modulus value');
+                ylabel('Counts');
+                histogramHandle.EdgeColor = 'none';
+                histogramHandle.FaceColor = 'red';
+            catch
+                error('No object loaded!')
+            end
+        end
+        
         function calculate_displacement(postPhasor)
         % displacment field: phase devided by modulus q
             try
@@ -1697,7 +1710,23 @@ classdef PostPhasor < handle
             mkdir(save_path);
             mkdir(save_path_figures);
             
-            if ismember('amp',values) || ismember('all',values)
+            if ismember('amp_hist',values) || ismember('all',values)
+                try
+                    % Figures
+                    postPhasor.calculate_amplitude_histogram;
+                    hFig = gcf;
+                    set(hFig,'Units','Inches');
+                    pos = get(hFig,'Position');
+                    set(hFig,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)]);
+                    print(hFig,fullfile(save_path_figures,'amplitude_histogram.pdf'),'-dpdf','-r0');
+                    print(hFig,fullfile(save_path_figures,'amplitude_histogram.png'),'-dpng','-r0');
+                    savefig(hFig,fullfile(save_path_figures,'amplitude_histogram.fig'));
+                    close(hFig);
+                catch
+                    error('Can not save amplitude histogram figure!')
+                end
+                
+            elseif ismember('amp',values) || ismember('all',values)
                 % Figures
                 postPhasor.plot_amplitude_slice(zoom_value);
                 hFig = gcf;
@@ -1751,7 +1780,7 @@ classdef PostPhasor < handle
                 print(hFig,fullfile(save_path_figures,'amplitude_central_profiles.pdf'),'-dpdf','-r0');
                 print(hFig,fullfile(save_path_figures,'amplitude_central_profiles.png'),'-dpng','-r0');
                 savefig(hFig,fullfile(save_path_figures,'amplitude_central_profiles.fig'));
-                close(hFig);
+                close(hFig);                            
             end
             
             fprintf('+ Figures are saved to %s\n', save_path_figures);
