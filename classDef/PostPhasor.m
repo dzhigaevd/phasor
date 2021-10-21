@@ -378,13 +378,7 @@ classdef PostPhasor < handle
                 warning('Data dimensionality is wrong!');
             end                    
             disp('Phase ramp removed!');
-        end
-        
-%         function transform2lab_backup(postPhasor)
-%             % Unified coordinate transformation
-%             DCS_to_SS_backup;                             
-%             postPhasor.update_plotting_vectors;
-%         end
+        end        
         
         function transform2lab(postPhasor)
             %change sign of the phase to have a correct displacement field
@@ -1268,9 +1262,7 @@ classdef PostPhasor < handle
             
             colormap hot;
         end
-        
-        
-        
+                        
         function plot_alpha_slice(postPhasor,zoom_value,type)
             % Plot derivatives with opacity map from amplitude of the
             % reconstruction
