@@ -1792,11 +1792,11 @@ classdef PostPhasor < handle
             
             savemat2vtk(fullfile(save_path, 'object.vtk'),          postPhasor.object.*postPhasor.mask,     postPhasor.object_sampling*1e9);
             try
-                savemat2vtk(fullfile(save_path, 'displacement.vtk'), abs(postPhasor.object), postPhasor.object_sampling*1e9,     postPhasor.displacement.*postPhasor.mask);
+                savemat2vtk(fullfile(save_path, 'displacement.vtk'), abs(postPhasor.object), postPhasor.object_sampling*1e9,     postPhasor.displacement);
             catch
             end
             try
-                savemat2vtk(fullfile(save_path, 'strain.vtk'),      abs(postPhasor.object), postPhasor.object_sampling*1e9,     postPhasor.strain.*postPhasor.strain_mask);
+                savemat2vtk(fullfile(save_path, 'strain.vtk'),      abs(postPhasor.object), postPhasor.object_sampling*1e9,     postPhasor.strain);
             catch
             end
             
